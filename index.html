@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login - Powerleads</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -38,7 +39,8 @@
     margin-top: 10px; transition: background .2s;
   }
   button:hover { background: var(--dourado-hover); }
-  #erro { color: #ff6b6b; font-size: 13px; text-align: center; margin-top: 10px; }
+  button:disabled { opacity: .6; cursor: not-allowed; }
+  #erro { color: #ff6b6b; font-size: 13px; text-align: center; margin-top: 10px; min-height: 16px; }
 </style>
 </head>
 <body>
@@ -46,7 +48,7 @@
     <h2>Powerleads</h2>
     <input type="email" id="email" placeholder="E-mail">
     <input type="password" id="senha" placeholder="Senha">
-    <button onclick="fazerLogin()">Entrar</button>
+    <button id="btnEntrar" onclick="fazerLogin()">Entrar</button>
     <p id="erro"></p>
   </div>
 
@@ -54,23 +56,44 @@
     const SUPABASE_URL = "https://uifwnzgkxsacxpfnqbak.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpZnduemdreHNhY3hwZm5xYmFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NjA4MzksImV4cCI6MjEwNDAzNjgzOX0.zMmM8cAjDQd9STev26mCGFXCoUdCWOArjAQus6dGZtU";
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     async function fazerLogin() {
-      const email = document.getElementById('email').value;
+      const email = document.getElementById('email').value.trim();
       const senha = document.getElementById('senha').value;
       const erroEl = document.getElementById('erro');
+      const btn = document.getElementById('btnEntrar');
 
-      const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+      erroEl.textContent = "";
+
+      if (!email || !senha) {
+        erroEl.textContent = "Preencha e-mail e senha.";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Entrando...";
+
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
+
+      btn.disabled = false;
+      btn.textContent = "Entrar";
 
       if (error) {
         erroEl.textContent = "Erro: " + error.message;
         return;
       }
+
       window.location.href = "dashboard.html";
     }
 
-    supabase.auth.getSession().then(({ data }) => {
+    // Permite pressionar Enter para logar
+    document.getElementById('senha').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') fazerLogin();
+    });
+
+    // Redireciona se já estiver logado
+    supabaseClient.auth.getSession().then(({ data }) => {
       if (data.session) window.location.href = "dashboard.html";
     });
   </script>
