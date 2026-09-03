@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #1e1e2f; font-family: sans-serif; }
+    .box { background: #2a2a3d; padding: 40px; border-radius: 10px; width: 300px; }
+    input { width: 100%; padding: 10px; margin: 8px 0; border-radius: 5px; border: none; }
+    button { width: 100%; padding: 10px; background: #4f46e5; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    h2 { color: white; text-align: center; }
+    #erro { color: #ff6b6b; font-size: 14px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Login</h2>
+    <input type="email" id="email" placeholder="E-mail">
+    <input type="password" id="senha" placeholder="Senha">
+    <button onclick="fazerLogin()">Entrar</button>
+    <p id="erro"></p>
+  </div>
+
+  <script>
+    // ⚠️ Substitua pelos seus dados reais
+    const SUPABASE_URL = "https://uifwnzgkxsacxpfnqbak.supabase.co";
+    const SUPABASE_ANON_KEY = "SUA_ANON_KEY_AQUI";
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function fazerLogin() {
+      const email = document.getElementById('email').value;
+      const senha = document.getElementById('senha').value;
+      const erroEl = document.getElementById('erro');
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: senha
+      });
+
+      if (error) {
+        erroEl.textContent = "Erro: " + error.message;
+        return;
+      }
+
+      // Login OK, salva sessão e redireciona
+      window.location.href = "dashboard.html";
+    }
+
+    // Se já estiver logado, redireciona direto
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) window.location.href = "dashboard.html";
+    });
+  </script>
+</body>
+</html>
