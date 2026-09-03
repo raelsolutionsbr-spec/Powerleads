@@ -1,35 +1,74 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Painel de Leads</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body { font-family: sans-serif; background: #1e1e2f; color: white; padding: 30px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { padding: 10px; border-bottom: 1px solid #444; text-align: left; }
-    th { background: #2a2a3d; }
-    .top-bar { display: flex; justify-content: space-between; align-items: center; }
-    button, a.btn { background: #4f46e5; color: white; padding: 8px 16px; border: none; border-radius: 5px; text-decoration: none; cursor: pointer; }
-    .status { padding: 4px 10px; border-radius: 12px; font-size: 12px; }
-    .novo { background: #3b82f6; }
-    .contatado { background: #eab308; }
-    .negociando { background: #f97316; }
-    .fechado { background: #22c55e; }
-  </style>
+<meta charset="UTF-8">
+<title>Painel de Leads - Powerleads</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --preto-fundo: #0d0d0d; --preto-card: #1a1a1a;
+    --dourado: #d4af37; --dourado-hover: #b8952e;
+    --branco: #f5f5f0; --cinza: #a3a3a3; --borda: #333;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--preto-fundo); color: var(--branco); padding: 30px; }
+  .top-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  h2 { color: var(--dourado); }
+  .acoes { display: flex; gap: 10px; align-items: center; }
+  select#filtro-status {
+    padding: 8px 12px; border-radius: 8px; border: 1px solid var(--borda);
+    background: var(--preto-card); color: var(--branco);
+  }
+  button, a.btn {
+    background: var(--dourado); color: #0d0d0d; padding: 8px 16px;
+    border: none; border-radius: 8px; text-decoration: none; cursor: pointer;
+    font-weight: bold; transition: background .2s;
+  }
+  button:hover, a.btn:hover { background: var(--dourado-hover); }
+  button.sair { background: transparent; border: 1px solid var(--dourado); color: var(--dourado); }
+  button.sair:hover { background: var(--dourado); color: #0d0d0d; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  th, td { padding: 10px; border-bottom: 1px solid var(--borda); text-align: left; font-size: 13px; }
+  th { background: var(--preto-card); color: var(--dourado); }
+  tr:hover td { background: rgba(212,175,55,0.05); }
+
+  .status { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+  .novo { background: #3b82f6; }
+  .contato { background: #eab308; color: #000; }
+  .proposta { background: #f97316; }
+  .fechado { background: #22c55e; color: #000; }
+  .perdido { background: #ef4444; }
+
+  .potencial-quente { color: #ff6b6b; font-weight: bold; }
+  .potencial-médio { color: #eab308; }
+  .potencial-frio { color: #60a5fa; }
+</style>
 </head>
 <body>
   <div class="top-bar">
     <h2>Painel de Leads</h2>
-    <div>
+    <div class="acoes">
+      <select id="filtro-status" onchange="carregarLeads()">
+        <option value="">Todos os status</option>
+        <option value="novo">Novo</option>
+        <option value="contato">Contato</option>
+        <option value="proposta">Proposta</option>
+        <option value="fechado">Fechado</option>
+        <option value="perdido">Perdido</option>
+      </select>
       <a class="btn" href="cadastro.html">+ Novo Lead</a>
-      <button onclick="sair()">Sair</button>
+      <button class="sair" onclick="sair()">Sair</button>
     </div>
   </div>
 
   <table>
     <thead>
-      <tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Status</th></tr>
+      <tr>
+        <th>Nome</th><th>Telefone</th><th>E-mail</th><th>CNPJ</th>
+        <th>Vidas</th><th>Classificação</th><th>Potencial</th>
+        <th>Origem</th><th>Operadora</th><th>Status</th>
+      </tr>
     </thead>
     <tbody id="tabela-leads"></tbody>
   </table>
@@ -45,15 +84,20 @@
     }
 
     async function carregarLeads() {
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const filtro = document.getElementById('filtro-status').value;
+      let query = supabase.from('leads').select('*').order('created_at', { ascending: false });
+      if (filtro) query = query.eq('status', filtro);
 
+      const { data, error } = await query;
       const tabela = document.getElementById('tabela-leads');
 
       if (error) {
-        tabela.innerHTML = `<tr><td colspan="4">Erro ao carregar: ${error.message}</td></tr>`;
+        tabela.innerHTML = `<tr><td colspan="10">Erro ao carregar: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data.length) {
+        tabela.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#a3a3a3;">Nenhum lead encontrado</td></tr>`;
         return;
       }
 
@@ -62,6 +106,12 @@
           <td>${lead.nome}</td>
           <td>${lead.telefone || '-'}</td>
           <td>${lead.email || '-'}</td>
+          <td>${lead.cnpj || '-'}</td>
+          <td>${lead.qtd_vidas ?? '-'}</td>
+          <td>${lead.classificacao || '-'}</td>
+          <td class="potencial-${lead.potencial}">${lead.potencial || '-'}</td>
+          <td>${lead.origem || '-'}</td>
+          <td>${lead.operadora_interesse || '-'}</td>
           <td><span class="status ${lead.status}">${lead.status}</span></td>
         </tr>
       `).join('');
