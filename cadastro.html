@@ -2,133 +2,103 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Cadastro de Lead - Powerleads</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastro - Powerleads</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
-    --preto-fundo: #0d0d0d; --preto-card: #1a1a1a;
-    --dourado: #d4af37; --dourado-hover: #b8952e;
-    --branco: #f5f5f0; --cinza: #a3a3a3; --borda: #333;
+    --preto-fundo: #0d0d0d;
+    --preto-card: #1a1a1a;
+    --dourado: #d4af37;
+    --dourado-hover: #b8952e;
+    --branco: #f5f5f0;
+    --cinza: #a3a3a3;
+    --borda: #333;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--preto-fundo); color: var(--branco); padding: 40px; }
-  .box { max-width: 480px; margin: auto; background: var(--preto-card); border: 1px solid var(--borda); padding: 32px; border-radius: 12px; }
-  h2 { color: var(--dourado); margin-bottom: 20px; text-align: center; }
-  label { font-size: 13px; color: var(--cinza); display: block; margin-top: 12px; margin-bottom: 4px; }
-  input, select, textarea {
-    width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--borda);
-    background: #0d0d0d; color: var(--branco); outline: none; font-family: inherit;
+  body {
+    display: flex; justify-content: center; align-items: center;
+    height: 100vh; background: var(--preto-fundo);
+    font-family: 'Segoe UI', Arial, sans-serif;
   }
-  input:focus, select:focus, textarea:focus { border-color: var(--dourado); }
+  .box {
+    background: var(--preto-card); border: 1px solid var(--borda);
+    padding: 40px; border-radius: 12px; width: 320px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  }
+  h2 { color: var(--dourado); text-align: center; margin-bottom: 20px; }
+  input {
+    width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px;
+    border: 1px solid var(--borda); background: #0d0d0d; color: var(--branco);
+    outline: none;
+  }
+  input:focus { border-color: var(--dourado); }
   button {
     width: 100%; padding: 12px; background: var(--dourado); color: #0d0d0d;
-    border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 18px;
-    transition: background .2s;
+    border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+    margin-top: 10px; transition: background .2s;
   }
   button:hover { background: var(--dourado-hover); }
-  #msg { text-align: center; margin-top: 12px; font-size: 14px; }
-  a { color: var(--dourado); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .voltar { display: block; text-align: center; margin-top: 16px; }
+  button:disabled { opacity: .6; cursor: not-allowed; }
+  #msg { font-size: 13px; text-align: center; margin-top: 10px; min-height: 16px; }
+  .link { display: block; text-align: center; margin-top: 15px; color: var(--cinza); font-size: 13px; text-decoration: none; }
+  .link:hover { color: var(--dourado); }
 </style>
 </head>
 <body>
   <div class="box">
-    <h2>Cadastrar Lead</h2>
-
-    <label>Nome*</label>
-    <input type="text" id="nome" placeholder="Nome do lead">
-
-    <label>Telefone</label>
-    <input type="text" id="telefone" placeholder="(00) 00000-0000">
-
-    <label>E-mail</label>
-    <input type="email" id="email" placeholder="email@exemplo.com">
-
-    <label>CNPJ</label>
-    <input type="text" id="cnpj" placeholder="00.000.000/0000-00">
-
-    <label>Quantidade de vidas</label>
-    <input type="number" id="qtd_vidas" placeholder="Ex: 15" min="0">
-
-    <label>Classificação</label>
-    <select id="classificacao">
-      <option value="pequeno">Pequeno</option>
-      <option value="médio" selected>Médio</option>
-      <option value="grande">Grande</option>
-    </select>
-
-    <label>Origem</label>
-    <input type="text" id="origem" placeholder="Ex: Indicação, Site, Anúncio">
-
-    <label>Operadora de interesse</label>
-    <input type="text" id="operadora_interesse" placeholder="Ex: Unimed, Bradesco Saúde">
-
-    <label>Potencial</label>
-    <select id="potencial">
-      <option value="quente">Quente</option>
-      <option value="médio" selected>Médio</option>
-      <option value="frio">Frio</option>
-    </select>
-
-    <label>Status</label>
-    <select id="status">
-      <option value="novo" selected>Novo</option>
-      <option value="contato">Contato</option>
-      <option value="proposta">Proposta</option>
-      <option value="fechado">Fechado</option>
-      <option value="perdido">Perdido</option>
-    </select>
-
-    <label>Observações</label>
-    <textarea id="observacoes" rows="3" placeholder="Anotações sobre o lead"></textarea>
-
-    <button onclick="cadastrarLead()">Salvar Lead</button>
+    <h2>Criar Conta</h2>
+    <input type="email" id="email" placeholder="E-mail">
+    <input type="password" id="senha" placeholder="Senha (mín. 6 caracteres)">
+    <button id="btnCadastrar" onclick="fazerCadastro()">Cadastrar</button>
     <p id="msg"></p>
-    <a class="voltar" href="dashboard.html">← Voltar ao painel</a>
+    <a href="index.html" class="link">Já tem conta? Fazer login</a>
   </div>
 
   <script>
     const SUPABASE_URL = "https://uifwnzgkxsacxpfnqbak.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpZnduemdreHNhY3hwZm5xYmFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NjA4MzksImV4cCI6MjEwNDAzNjgzOX0.zMmM8cAjDQd9STev26mCGFXCoUdCWOArjAQus6dGZtU";
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    async function cadastrarLead() {
-      const nome = document.getElementById('nome').value.trim();
-      const telefone = document.getElementById('telefone').value.trim();
+    async function fazerCadastro() {
       const email = document.getElementById('email').value.trim();
-      const cnpj = document.getElementById('cnpj').value.trim();
-      const qtd_vidas = document.getElementById('qtd_vidas').value;
-      const classificacao = document.getElementById('classificacao').value;
-      const origem = document.getElementById('origem').value.trim();
-      const operadora_interesse = document.getElementById('operadora_interesse').value.trim();
-      const potencial = document.getElementById('potencial').value;
-      const status = document.getElementById('status').value;
-      const observacoes = document.getElementById('observacoes').value.trim();
+      const senha = document.getElementById('senha').value;
       const msgEl = document.getElementById('msg');
+      const btn = document.getElementById('btnCadastrar');
 
-      if (!nome) {
-        msgEl.textContent = "Nome é obrigatório!";
-        msgEl.style.color = "#ff6b6b";
+      msgEl.style.color = "#ff6b6b";
+      msgEl.textContent = "";
+
+      if (!email || !senha) {
+        msgEl.textContent = "Preencha e-mail e senha.";
+        return;
+      }
+      if (senha.length < 6) {
+        msgEl.textContent = "A senha deve ter no mínimo 6 caracteres.";
         return;
       }
 
-      const { error } = await supabase.from('leads').insert([{
-        nome, telefone, email, cnpj,
-        qtd_vidas: qtd_vidas ? parseInt(qtd_vidas) : null,
-        classificacao, origem, operadora_interesse, potencial, status, observacoes
-      }]);
+      btn.disabled = true;
+      btn.textContent = "Cadastrando...";
+
+      const { error } = await supabaseClient.auth.signUp({ email, password: senha });
+
+      btn.disabled = false;
+      btn.textContent = "Cadastrar";
 
       if (error) {
         msgEl.textContent = "Erro: " + error.message;
-        msgEl.style.color = "#ff6b6b";
-      } else {
-        msgEl.textContent = "Lead cadastrado com sucesso!";
-        msgEl.style.color = "#4ade80";
-        document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+        return;
       }
+
+      msgEl.style.color = "lightgreen";
+      msgEl.textContent = "Cadastro realizado! Verifique seu e-mail para confirmar.";
     }
+
+    document.getElementById('senha').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') fazerCadastro();
+    });
   </script>
 </body>
 </html>
