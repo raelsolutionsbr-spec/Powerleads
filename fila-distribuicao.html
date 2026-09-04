@@ -65,6 +65,21 @@
   }
   .btn-confirmar:hover { background: #1ebc59; }
 
+  .btn-sair {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 1000;
+  }
+  .btn-sair:hover { background: #c0392b; }
+
   .empty {
     text-align: center;
     color: #888;
@@ -81,6 +96,8 @@
 </head>
 <body>
 
+<button class="btn-sair" onclick="sair()">Sair</button>
+
 <div class="container">
   <h1>📋 Fila de Distribuição de Leads</h1>
   <div id="listaLeads" class="loading">Carregando leads...</div>
@@ -90,14 +107,26 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-  // ⚠️ SUBSTITUA pelas suas credenciais do Supabase
   const SUPABASE_URL = "https://uifwnzgkxsacxpfnqbak.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpZnduemdreHNhY3hwZm5xYmFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NjA4MzksImV4cCI6MjEwNDAzNjgzOX0.zMmM8cAjDQd9STev26mCGFXCoUdCWOArjAQus6dGZtU";
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const listaLeads = document.getElementById("listaLeads");
 
-  // Mapeia porte para classe de cor
+  function sair() {
+    supabaseClient.auth.signOut();
+    window.location.href = "index.html";
+  }
+
+  async function verificarSessao() {
+    const { data } = await supabaseClient.auth.getSession();
+    if (!data.session) {
+      window.location.href = "index.html";
+      return false;
+    }
+    return true;
+  }
+
   function classePorte(porte) {
     if (porte === "pequeno") return "badge-pequeno";
     if (porte === "medio") return "badge-medio";
@@ -108,11 +137,10 @@
   async function carregarLeads() {
     listaLeads.innerHTML = "Carregando leads...";
 
-    // Busca leads que ainda não foram atribuídos/confirmados
-    const { data: leads, error } = await supabase
+    const { data: leads, error } = await supabaseClient
       .from("leads")
       .select("*")
-      .is("corretor_id", null) // ajuste esse filtro conforme sua coluna de status
+      .is("corretor_id", null)
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -153,13 +181,12 @@
     }
   }
 
-  // Lógica simples de sugestão — ajuste conforme sua regra real de negócio
   async function sugerirCorretor(lead) {
-    const { data: corretores, error } = await supabase
+    const { data: corretores, error } = await supabaseClient
       .from("corretores")
       .select("*")
       .eq("ativo", true)
-      .lte("leads_hoje", 4) // exemplo: limite de 5 por dia (0 a 4 = ainda tem vaga)
+      .lte("leads_hoje", 4)
       .order("leads_hoje", { ascending: true })
       .limit(1);
 
@@ -170,8 +197,7 @@
   async function confirmarDistribuicao(lead, corretor) {
     if (!corretor) return;
 
-    // Atualiza o lead no banco, atribuindo o corretor
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from("leads")
       .update({
         corretor_id: corretor.id,
@@ -185,7 +211,6 @@
       return;
     }
 
-    // Monta a mensagem do WhatsApp
     const mensagem = encodeURIComponent(
       `Olá ${corretor.nome}! Você recebeu um novo lead:\n\n` +
       `Nome: ${lead.nome}\n` +
@@ -195,17 +220,20 @@
       `Por favor, entre em contato o mais rápido possível!`
     );
 
-    const numeroCorretor = corretor.telefone.replace(/\D/g, ""); // remove caracteres não numéricos
+    const numeroCorretor = corretor.telefone.replace(/\D/g, "");
     const linkWhatsApp = `https://wa.me/55${numeroCorretor}?text=${mensagem}`;
 
     window.open(linkWhatsApp, "_blank");
 
-    // Recarrega a lista (o lead confirmado vai sair da fila)
     carregarLeads();
   }
 
-  // Carrega a lista ao abrir a página
-  carregarLeads();
+  async function init() {
+    const logado = await verificarSessao();
+    if (logado) carregarLeads();
+  }
+
+  init();
 </script>
 
 </body>
