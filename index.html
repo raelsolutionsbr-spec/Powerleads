@@ -46,10 +46,12 @@
 <body>
   <div class="box">
     <h2>Powerleads</h2>
-    <input type="email" id="email" placeholder="E-mail">
-    <input type="password" id="senha" placeholder="Senha">
-    <button id="btnEntrar" onclick="fazerLogin()">Entrar</button>
-    <p id="erro"></p>
+    <form id="formLogin" autocomplete="on">
+      <input type="email" id="email" placeholder="E-mail" autocomplete="email" required>
+      <input type="password" id="senha" placeholder="Senha" autocomplete="current-password" required>
+      <button type="submit" id="btnEntrar">Entrar</button>
+      <p id="erro"></p>
+    </form>
   </div>
 
   <script>
@@ -58,7 +60,9 @@
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    async function fazerLogin() {
+    document.getElementById('formLogin').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
       const email = document.getElementById('email').value.trim();
       const senha = document.getElementById('senha').value;
       const erroEl = document.getElementById('erro');
@@ -76,19 +80,14 @@
 
       const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
 
-      btn.disabled = false;
-      btn.textContent = "Entrar";
-
       if (error) {
+        btn.disabled = false;
+        btn.textContent = "Entrar";
         erroEl.textContent = "Erro: " + error.message;
         return;
       }
 
       window.location.href = "dashboard.html";
-    }
-
-    document.getElementById('senha').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') fazerLogin();
     });
 
     supabaseClient.auth.getSession().then(({ data }) => {
