@@ -27,7 +27,7 @@
     background: var(--preto-card);
   }
   header h1 { color: var(--dourado); font-size: 20px; }
-  #emailUsuario { color: var(--cinza); font-size: 14px; }
+  #emailUsuario { color: var(--cinza); font-size: 14px; margin-right: 15px; }
   button#btnSair {
     background: var(--dourado); color: #0d0d0d; border: none;
     padding: 8px 16px; border-radius: 8px; font-weight: bold;
@@ -35,15 +35,34 @@
   }
   button#btnSair:hover { background: var(--dourado-hover); }
   main {
-    flex: 1; display: flex; justify-content: center; align-items: center;
-    width: 100%;
+    flex: 1; width: 100%;
+    display: flex; justify-content: center;
+    padding: 40px 20px;
   }
   .card {
     background: var(--preto-card); border: 1px solid var(--borda);
-    padding: 40px; border-radius: 12px; text-align: center;
+    padding: 30px; border-radius: 12px; width: 100%; max-width: 1100px;
   }
-  .card h2 { color: var(--dourado); margin-bottom: 10px; }
-  .card p { color: var(--cinza); }
+  .card h2 { color: var(--dourado); margin-bottom: 20px; }
+  #carregando { color: var(--cinza); margin: 20px 0; }
+  #erroLeads { color: #ff6b6b; display: none; margin: 10px 0; }
+  table { width: 100%; border-collapse: collapse; display: none; }
+  thead th {
+    padding: 10px; text-align: left; color: var(--dourado);
+    border-bottom: 2px solid var(--borda); font-size: 14px;
+  }
+  tbody td {
+    padding: 10px; border-bottom: 1px solid var(--borda);
+    font-size: 14px; color: var(--branco);
+  }
+  tbody tr:hover { background: rgba(212, 175, 55, 0.05); }
+  .status-badge {
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;
+  }
+  .status-novo { background: rgba(212, 175, 55, 0.2); color: var(--dourado); }
+  .status-contatado { background: rgba(100, 149, 237, 0.2); color: #6495ed; }
+  .status-convertido { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
+  .status-perdido { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
 </style>
 </head>
 <body>
@@ -57,8 +76,22 @@
 
   <main>
     <div class="card">
-      <h2>Bem-vindo ao Dashboard</h2>
-      <p>Você está logado com sucesso.</p>
+      <h2>Meus Leads</h2>
+      <div id="carregando">Carregando leads...</div>
+      <div id="erroLeads"></div>
+      <table id="tabelaLeads">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Telefone</th>
+            <th>E-mail</th>
+            <th>Origem</th>
+            <th>Status</th>
+            <th>Data</th>
+          </tr>
+        </thead>
+        <tbody id="corpoTabela"></tbody>
+      </table>
     </div>
   </main>
 
@@ -73,12 +106,69 @@
       window.location.href = "index.html";
     }
 
+    function formatarData(dataISO) {
+      if (!dataISO) return '-';
+      const d = new Date(dataISO);
+      return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function classeStatus(status) {
+      const s = (status || '').toLowerCase();
+      if (s === 'novo') return 'status-novo';
+      if (s === 'contatado') return 'status-contatado';
+      if (s === 'convertido') return 'status-convertido';
+      if (s === 'perdido') return 'status-perdido';
+      return 'status-novo';
+    }
+
+    async function carregarLeads() {
+      const carregando = document.getElementById('carregando');
+      const erroDiv = document.getElementById('erroLeads');
+      const tabela = document.getElementById('tabelaLeads');
+      const corpo = document.getElementById('corpoTabela');
+
+      const { data, error } = await supabaseClient
+        .from('leads')
+        .select('id, nome, telefone, email, status, origem, created_at')
+        .order('created_at', { ascending: false });
+
+      carregando.style.display = 'none';
+
+      if (error) {
+        erroDiv.textContent = "Erro ao carregar leads: " + error.message;
+        erroDiv.style.display = 'block';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        erroDiv.textContent = "Nenhum lead encontrado.";
+        erroDiv.style.display = 'block';
+        return;
+      }
+
+      tabela.style.display = 'table';
+
+      data.forEach(lead => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${lead.nome ?? '-'}</td>
+          <td>${lead.telefone ?? '-'}</td>
+          <td>${lead.email ?? '-'}</td>
+          <td>${lead.origem ?? '-'}</td>
+          <td><span class="status-badge ${classeStatus(lead.status)}">${lead.status ?? '-'}</span></td>
+          <td>${formatarData(lead.created_at)}</td>
+        `;
+        corpo.appendChild(tr);
+      });
+    }
+
     // Protege a página: se não houver sessão, volta pro login
     supabaseClient.auth.getSession().then(({ data }) => {
       if (!data.session) {
         window.location.href = "index.html";
       } else {
         document.getElementById('emailUsuario').textContent = data.session.user.email;
+        carregarLeads();
       }
     });
   </script>
