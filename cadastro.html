@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cadastro - Powerleads</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cadastro de Lead - Power Seguros</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
@@ -14,91 +14,262 @@
     --branco: #f5f5f0;
     --cinza: #a3a3a3;
     --borda: #333;
+    --erro: #ff6b6b;
+    --sucesso: #4caf50;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    display: flex; justify-content: center; align-items: center;
-    height: 100vh; background: var(--preto-fundo);
-    font-family: 'Segoe UI', Arial, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh; background: var(--preto-fundo);
+    font-family: 'Segoe UI', Arial, sans-serif; color: var(--branco);
+    padding-bottom: 40px;
   }
-  .box {
+  header {
+    width: 100%; display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 40px; border-bottom: 1px solid var(--borda);
+    background: var(--preto-card);
+  }
+  header h1 { color: var(--dourado); font-size: 20px; }
+  header a {
+    color: var(--dourado); text-decoration: none; font-size: 14px;
+    border: 1px solid var(--dourado); padding: 8px 16px; border-radius: 8px;
+  }
+  header a:hover { background: var(--dourado); color: #0d0d0d; }
+  main { flex: 1; width: 100%; display: flex; justify-content: center; padding: 40px 20px; }
+  .card {
     background: var(--preto-card); border: 1px solid var(--borda);
-    padding: 40px; border-radius: 12px; width: 320px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    padding: 30px; border-radius: 12px; width: 100%; max-width: 700px;
   }
-  h2 { color: var(--dourado); text-align: center; margin-bottom: 20px; }
-  input {
-    width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px;
-    border: 1px solid var(--borda); background: #0d0d0d; color: var(--branco);
-    outline: none;
+  .card h2 { color: var(--dourado); margin-bottom: 20px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+  .campo { margin-bottom: 15px; }
+  .campo.full { grid-column: 1 / -1; }
+  label { display: block; font-size: 13px; color: var(--cinza); margin-bottom: 5px; }
+  input, select, textarea {
+    width: 100%; padding: 10px; border-radius: 8px;
+    border: 1px solid var(--borda); background: #111; color: var(--branco);
+    font-size: 14px;
   }
-  input:focus { border-color: var(--dourado); }
-  button {
-    width: 100%; padding: 12px; background: var(--dourado); color: #0d0d0d;
-    border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
-    margin-top: 10px; transition: background .2s;
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--dourado); }
+  textarea { resize: vertical; min-height: 70px; }
+  .obrigatorio { color: var(--erro); }
+  button#btnSalvar {
+    margin-top: 10px; width: 100%; background: var(--dourado); color: #0d0d0d;
+    border: none; padding: 14px; border-radius: 8px; font-weight: bold;
+    font-size: 15px; cursor: pointer; transition: background .2s;
   }
-  button:hover { background: var(--dourado-hover); }
-  button:disabled { opacity: .6; cursor: not-allowed; }
-  #msg { font-size: 13px; text-align: center; margin-top: 10px; min-height: 16px; }
-  .link { display: block; text-align: center; margin-top: 15px; color: var(--cinza); font-size: 13px; text-decoration: none; }
-  .link:hover { color: var(--dourado); }
+  button#btnSalvar:hover { background: var(--dourado-hover); }
+  button#btnSalvar:disabled { opacity: .6; cursor: not-allowed; }
+  #mensagem {
+    margin-top: 15px; padding: 12px; border-radius: 8px; font-size: 14px; display: none;
+  }
+  #mensagem.erro { background: rgba(255,107,107,.15); color: var(--erro); border: 1px solid var(--erro); }
+  #mensagem.sucesso { background: rgba(76,175,80,.15); color: var(--sucesso); border: 1px solid var(--sucesso); }
+  @media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
-  <div class="box">
-    <h2>Criar Conta</h2>
-    <input type="email" id="email" placeholder="E-mail">
-    <input type="password" id="senha" placeholder="Senha (mín. 6 caracteres)">
-    <button id="btnCadastrar" onclick="fazerCadastro()">Cadastrar</button>
-    <p id="msg"></p>
-    <a href="index.html" class="link">Já tem conta? Fazer login</a>
+
+<header>
+  <h1>Powerleads</h1>
+  <a href="dashboard.html">← Voltar ao Dashboard</a>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Cadastrar Novo Lead</h2>
+
+    <form id="formLead">
+      <div class="grid2">
+        <div class="campo full">
+          <label>Nome / Razão Social <span class="obrigatorio">*</span></label>
+          <input type="text" id="nome" required />
+        </div>
+
+        <div class="campo">
+          <label>Telefone</label>
+          <input type="text" id="telefone" placeholder="(11) 99999-9999" />
+        </div>
+
+        <div class="campo">
+          <label>E-mail</label>
+          <input type="email" id="email" />
+        </div>
+
+        <div class="campo">
+          <label>CNPJ</label>
+          <input type="text" id="cnpj" placeholder="00.000.000/0000-00" />
+        </div>
+
+        <div class="campo">
+          <label>Quantidade de Vidas</label>
+          <input type="number" id="qtd_vidas" min="0" />
+        </div>
+
+        <div class="campo">
+          <label>Classificação</label>
+          <select id="classificacao">
+            <option value="">Selecione</option>
+            <option value="quente">🔥 Quente</option>
+            <option value="morno">🟠 Morno</option>
+            <option value="frio">🔵 Frio</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label>Status</label>
+          <select id="status">
+            <option value="novo">Novo</option>
+            <option value="em_contato">Em contato</option>
+            <option value="negociando">Negociando</option>
+            <option value="fechado">Fechado</option>
+            <option value="perdido">Perdido</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label>Origem</label>
+          <select id="origem">
+            <option value="">Selecione</option>
+            <option value="site">Site</option>
+            <option value="indicacao">Indicação</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="instagram">Instagram</option>
+            <option value="google">Google Ads</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label>Operadora de Interesse</label>
+          <input type="text" id="operadora_interesse" placeholder="Ex: Unimed, Bradesco..." />
+        </div>
+
+        <div class="campo">
+          <label>Potencial</label>
+          <select id="potencial">
+            <option value="">Selecione</option>
+            <option value="alto">Alto</option>
+            <option value="medio">Médio</option>
+            <option value="baixo">Baixo</option>
+          </select>
+        </div>
+
+        <div class="campo full">
+          <label>Corretor Responsável</label>
+          <select id="corretor_id">
+            <option value="">Não atribuído</option>
+          </select>
+        </div>
+
+        <div class="campo full">
+          <label>Observações</label>
+          <textarea id="observacoes"></textarea>
+        </div>
+      </div>
+
+      <button type="submit" id="btnSalvar">💾 Salvar Lead</button>
+      <div id="mensagem"></div>
+    </form>
   </div>
+</main>
 
-  <script>
-    const SUPABASE_URL = "https://uifwnzgkxsacxpfnqbak.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpZnduemdreHNhY3hwZm5xYmFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NjA4MzksImV4cCI6MjEwNDAzNjgzOX0.zMmM8cAjDQd9STev26mCGFXCoUdCWOArjAQus6dGZtU";
+<script>
+  const SUPABASE_URL = "https://uifwnzgkxsacxpfnqbak.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpZnduemdreHNhY3hwZm5xYmFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NjA4MzksImV4cCI6MjEwNDAzNjgzOX0.zMmM8cAjDQd9STev26mCGFXCoUdCWOArjAQus6dGZtU";
 
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    async function fazerCadastro() {
-      const email = document.getElementById('email').value.trim();
-      const senha = document.getElementById('senha').value;
-      const msgEl = document.getElementById('msg');
-      const btn = document.getElementById('btnCadastrar');
+  // Protege a página: exige login
+  supabaseClient.auth.getSession().then(({ data }) => {
+    if (!data.session) window.location.href = "index.html";
+    else carregarCorretores();
+  });
 
-      msgEl.style.color = "#ff6b6b";
-      msgEl.textContent = "";
+  // Carrega corretores ativos no select
+  async function carregarCorretores() {
+    const { data, error } = await supabaseClient
+      .from('corretores')
+      .select('id, nome')
+      .eq('ativo', true)
+      .order('nome');
 
-      if (!email || !senha) {
-        msgEl.textContent = "Preencha e-mail e senha.";
-        return;
-      }
-      if (senha.length < 6) {
-        msgEl.textContent = "A senha deve ter no mínimo 6 caracteres.";
-        return;
-      }
+    if (error || !data) return;
 
-      btn.disabled = true;
-      btn.textContent = "Cadastrando...";
+    const select = document.getElementById('corretor_id');
+    data.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.nome;
+      select.appendChild(opt);
+    });
+  }
 
-      const { error } = await supabaseClient.auth.signUp({ email, password: senha });
+  function mostrarMensagem(texto, tipo) {
+    const el = document.getElementById('mensagem');
+    el.textContent = texto;
+    el.className = tipo;
+    el.style.display = 'block';
+  }
 
+  document.getElementById('formLead').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const btn = document.getElementById('btnSalvar');
+    btn.disabled = true;
+    btn.textContent = "Salvando...";
+
+    const novoLead = {
+      nome: document.getElementById('nome').value.trim(),
+      telefone: document.getElementById('telefone').value.trim() || null,
+      email: document.getElementById('email').value.trim() || null,
+      cnpj: document.getElementById('cnpj').value.trim() || null,
+      qtd_vidas: document.getElementById('qtd_vidas').value ? parseInt(document.getElementById('qtd_vidas').value) : null,
+      classificacao: document.getElementById('classificacao').value || null,
+      status: document.getElementById('status').value || 'novo',
+      origem: document.getElementById('origem').value || null,
+      operadora_interesse: document.getElementById('operadora_interesse').value.trim() || null,
+      potencial: document.getElementById('potencial').value || null,
+      corretor_id: document.getElementById('corretor_id').value || null,
+      observacoes: document.getElementById('observacoes').value.trim() || null
+    };
+
+    // 1. Insere o lead
+    const { data: leadInserido, error: erroLead } = await supabaseClient
+      .from('leads')
+      .insert(novoLead)
+      .select()
+      .single();
+
+    if (erroLead) {
+      mostrarMensagem("Erro ao salvar lead: " + erroLead.message, "erro");
       btn.disabled = false;
-      btn.textContent = "Cadastrar";
-
-      if (error) {
-        msgEl.textContent = "Erro: " + error.message;
-        return;
-      }
-
-      msgEl.style.color = "lightgreen";
-      msgEl.textContent = "Cadastro realizado! Verifique seu e-mail para confirmar.";
+      btn.textContent = "💾 Salvar Lead";
+      return;
     }
 
-    document.getElementById('senha').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') fazerCadastro();
+    // 2. Registra no histórico (auditoria)
+    const { data: sessao } = await supabaseClient.auth.getSession();
+    const emailUsuario = sessao.session?.user?.email || "sistema";
+
+    await supabaseClient.from('historico_leads').insert({
+      lead_id: leadInserido.id,
+      usuario: emailUsuario,
+      acao: "criacao",
+      observacao: "Lead cadastrado via formulário."
     });
-  </script>
+
+    mostrarMensagem("✅ Lead cadastrado com sucesso!", "sucesso");
+    document.getElementById('formLead').reset();
+    btn.disabled = false;
+    btn.textContent = "💾 Salvar Lead";
+
+    // Opcional: redirecionar para o dashboard após 1.5s
+    setTimeout(() => {
+      window.location.href = "dashboard.html";
+    }, 1500);
+  });
+</script>
+
 </body>
 </html>
