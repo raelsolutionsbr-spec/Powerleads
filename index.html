@@ -87,12 +87,10 @@
       window.location.href = "dashboard.html";
     }
 
-    // Permite pressionar Enter para logar
     document.getElementById('senha').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') fazerLogin();
     });
 
-    // Redireciona se já estiver logado
     supabaseClient.auth.getSession().then(({ data }) => {
       if (data.session) window.location.href = "dashboard.html";
     });
