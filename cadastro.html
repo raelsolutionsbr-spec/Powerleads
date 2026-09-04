@@ -53,6 +53,7 @@
   input:focus, select:focus, textarea:focus { outline: none; border-color: var(--dourado); }
   textarea { resize: vertical; min-height: 70px; }
   .obrigatorio { color: var(--erro); }
+  .dica { font-size: 12px; color: var(--cinza); margin-top: 4px; }
   button#btnSalvar {
     margin-top: 10px; width: 100%; background: var(--dourado); color: #0d0d0d;
     border: none; padding: 14px; border-radius: 8px; font-weight: bold;
@@ -102,8 +103,9 @@
         </div>
 
         <div class="campo">
-          <label>Quantidade de Vidas</label>
+          <label>Quantidade de Vidas <span class="obrigatorio">*</span></label>
           <input type="number" id="qtd_vidas" min="0" />
+          <p class="dica">O porte (pequeno/médio/grande) é calculado automaticamente pelo sistema.</p>
         </div>
 
         <div class="campo">
@@ -156,7 +158,7 @@
         </div>
 
         <div class="campo full">
-          <label>Corretor Responsável</label>
+          <label>Corretor Responsável (opcional — a Fila de Distribuição pode sugerir depois)</label>
           <select id="corretor_id">
             <option value="">Não atribuído</option>
           </select>
@@ -180,13 +182,11 @@
 
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // Protege a página: exige login
   supabaseClient.auth.getSession().then(({ data }) => {
     if (!data.session) window.location.href = "index.html";
     else carregarCorretores();
   });
 
-  // Carrega corretores ativos no select
   async function carregarCorretores() {
     const { data, error } = await supabaseClient
       .from('corretores')
@@ -234,7 +234,6 @@
       observacoes: document.getElementById('observacoes').value.trim() || null
     };
 
-    // 1. Insere o lead
     const { data: leadInserido, error: erroLead } = await supabaseClient
       .from('leads')
       .insert(novoLead)
@@ -248,7 +247,6 @@
       return;
     }
 
-    // 2. Registra no histórico (auditoria)
     const { data: sessao } = await supabaseClient.auth.getSession();
     const emailUsuario = sessao.session?.user?.email || "sistema";
 
@@ -264,7 +262,6 @@
     btn.disabled = false;
     btn.textContent = "💾 Salvar Lead";
 
-    // Opcional: redirecionar para o dashboard após 1.5s
     setTimeout(() => {
       window.location.href = "dashboard.html";
     }, 1500);
