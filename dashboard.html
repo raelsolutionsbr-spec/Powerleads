@@ -1,176 +1,128 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard - Powerleads</title>
+<meta charset="UTF-8" />
+<title>Dashboard de Leads - Power Seguros</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  :root {
-    --preto-fundo: #0d0d0d;
-    --preto-card: #1a1a1a;
-    --dourado: #d4af37;
-    --dourado-hover: #b8952e;
-    --branco: #f5f5f0;
-    --cinza: #a3a3a3;
-    --borda: #333;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    display: flex; flex-direction: column; align-items: center;
-    min-height: 100vh; background: var(--preto-fundo);
-    font-family: 'Segoe UI', Arial, sans-serif; color: var(--branco);
-  }
-  header {
-    width: 100%; display: flex; justify-content: space-between; align-items: center;
-    padding: 20px 40px; border-bottom: 1px solid var(--borda);
-    background: var(--preto-card);
-  }
-  header h1 { color: var(--dourado); font-size: 20px; }
-  #emailUsuario { color: var(--cinza); font-size: 14px; margin-right: 15px; }
-  button#btnSair {
-    background: var(--dourado); color: #0d0d0d; border: none;
-    padding: 8px 16px; border-radius: 8px; font-weight: bold;
-    cursor: pointer; transition: background .2s;
-  }
-  button#btnSair:hover { background: var(--dourado-hover); }
-  main {
-    flex: 1; width: 100%;
-    display: flex; justify-content: center;
-    padding: 40px 20px;
-  }
-  .card {
-    background: var(--preto-card); border: 1px solid var(--borda);
-    padding: 30px; border-radius: 12px; width: 100%; max-width: 1100px;
-  }
-  .card h2 { color: var(--dourado); margin-bottom: 20px; }
-  #carregando { color: var(--cinza); margin: 20px 0; }
-  #erroLeads { color: #ff6b6b; display: none; margin: 10px 0; }
-  table { width: 100%; border-collapse: collapse; display: none; }
-  thead th {
-    padding: 10px; text-align: left; color: var(--dourado);
-    border-bottom: 2px solid var(--borda); font-size: 14px;
-  }
-  tbody td {
-    padding: 10px; border-bottom: 1px solid var(--borda);
-    font-size: 14px; color: var(--branco);
-  }
-  tbody tr:hover { background: rgba(212, 175, 55, 0.05); }
-  .status-badge {
-    padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;
-  }
-  .status-novo { background: rgba(212, 175, 55, 0.2); color: var(--dourado); }
-  .status-contatado { background: rgba(100, 149, 237, 0.2); color: #6495ed; }
-  .status-convertido { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
-  .status-perdido { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
+  body { font-family: Arial, sans-serif; background: #0f1117; color: #eee; padding: 20px; }
+  h1 { color: #4dd0e1; }
+  .filtros { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
+  select, input { padding: 6px; border-radius: 4px; border: none; background: #1f2230; color: #eee; }
+  table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+  th, td { padding: 8px 12px; border-bottom: 1px solid #333; text-align: left; }
+  th { background: #1f2230; color: #4dd0e1; }
+  tr:hover { background: #1a1d29; }
+  .badge { padding: 3px 8px; border-radius: 12px; font-size: 12px; }
+  .quente { background: #e53935; }
+  .morno { background: #fb8c00; }
+  .frio { background: #1e88e5; }
+  .novo { background: #43a047; }
+  .fechado { background: #6d4c41; }
+  .perdido { background: #757575; }
 </style>
 </head>
 <body>
-  <header>
-    <h1>Powerleads</h1>
-    <div>
-      <span id="emailUsuario"></span>
-      <button id="btnSair" onclick="fazerLogout()">Sair</button>
-    </div>
-  </header>
 
-  <main>
-    <div class="card">
-      <h2>Meus Leads</h2>
-      <div id="carregando">Carregando leads...</div>
-      <div id="erroLeads"></div>
-      <table id="tabelaLeads">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Telefone</th>
-            <th>E-mail</th>
-            <th>Origem</th>
-            <th>Status</th>
-            <th>Data</th>
-          </tr>
-        </thead>
-        <tbody id="corpoTabela"></tbody>
-      </table>
-    </div>
-  </main>
+<h1>📋 Leads - Power Seguros</h1>
 
-  <script>
-    const SUPABASE_URL = "https://uifwnzgkxsacxpfnqbak.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpZnduemdreHNhY3hwZm5xYmFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NjA4MzksImV4cCI6MjEwNDAzNjgzOX0.zMmM8cAjDQd9STev26mCGFXCoUdCWOArjAQus6dGZtU";
+<div class="filtros">
+  <select id="filtroStatus">
+    <option value="">Todos os status</option>
+    <option value="novo">Novo</option>
+    <option value="em_contato">Em contato</option>
+    <option value="negociando">Negociando</option>
+    <option value="fechado">Fechado</option>
+    <option value="perdido">Perdido</option>
+  </select>
 
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  <select id="filtroClassificacao">
+    <option value="">Todas as classificações</option>
+    <option value="quente">Quente</option>
+    <option value="morno">Morno</option>
+    <option value="frio">Frio</option>
+  </select>
 
-    async function fazerLogout() {
-      await supabaseClient.auth.signOut();
-      window.location.href = "index.html";
+  <input type="text" id="buscaNome" placeholder="Buscar por nome ou CNPJ..." />
+  <button onclick="carregarLeads()">🔄 Atualizar</button>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Nome</th>
+      <th>CNPJ</th>
+      <th>Telefone</th>
+      <th>Qtd. Vidas</th>
+      <th>Classificação</th>
+      <th>Status</th>
+      <th>Operadora Interesse</th>
+      <th>Potencial</th>
+      <th>Corretor</th>
+      <th>Criado em</th>
+    </tr>
+  </thead>
+  <tbody id="tabelaLeads">
+    <tr><td colspan="10">Carregando...</td></tr>
+  </tbody>
+</table>
+
+<script>
+  const SUPABASE_URL = "SUA_URL_AQUI";
+  const SUPABASE_KEY = "SUA_ANON_KEY_AQUI";
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  async function carregarLeads() {
+    const status = document.getElementById("filtroStatus").value;
+    const classificacao = document.getElementById("filtroClassificacao").value;
+    const busca = document.getElementById("buscaNome").value.trim();
+
+    let query = supabase
+      .from("leads")
+      .select("*, corretores(nome)")
+      .order("created_at", { ascending: false });
+
+    if (status) query = query.eq("status", status);
+    if (classificacao) query = query.eq("classificacao", classificacao);
+    if (busca) query = query.or(`nome.ilike.%${busca}%,cnpj.ilike.%${busca}%`);
+
+    const { data, error } = await query;
+    const tbody = document.getElementById("tabelaLeads");
+
+    if (error) {
+      tbody.innerHTML = `<tr><td colspan="10">Erro: ${error.message}</td></tr>`;
+      return;
     }
 
-    function formatarData(dataISO) {
-      if (!dataISO) return '-';
-      const d = new Date(dataISO);
-      return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="10">Nenhum lead encontrado.</td></tr>`;
+      return;
     }
 
-    function classeStatus(status) {
-      const s = (status || '').toLowerCase();
-      if (s === 'novo') return 'status-novo';
-      if (s === 'contatado') return 'status-contatado';
-      if (s === 'convertido') return 'status-convertido';
-      if (s === 'perdido') return 'status-perdido';
-      return 'status-novo';
-    }
+    tbody.innerHTML = data.map(lead => `
+      <tr>
+        <td>${lead.nome || "-"}</td>
+        <td>${lead.cnpj || "-"}</td>
+        <td>${lead.telefone || "-"}</td>
+        <td>${lead.qtd_vidas ?? "-"}</td>
+        <td><span class="badge ${lead.classificacao || ''}">${lead.classificacao || "-"}</span></td>
+        <td><span class="badge ${lead.status || ''}">${lead.status || "-"}</span></td>
+        <td>${lead.operadora_interesse || "-"}</td>
+        <td>${lead.potencial || "-"}</td>
+        <td>${lead.corretores?.nome || "Não atribuído"}</td>
+        <td>${lead.created_at ? new Date(lead.created_at).toLocaleDateString('pt-BR') : "-"}</td>
+      </tr>
+    `).join("");
+  }
 
-    async function carregarLeads() {
-      const carregando = document.getElementById('carregando');
-      const erroDiv = document.getElementById('erroLeads');
-      const tabela = document.getElementById('tabelaLeads');
-      const corpo = document.getElementById('corpoTabela');
+  document.getElementById("filtroStatus").addEventListener("change", carregarLeads);
+  document.getElementById("filtroClassificacao").addEventListener("change", carregarLeads);
+  document.getElementById("buscaNome").addEventListener("keyup", (e) => {
+    if (e.key === "Enter") carregarLeads();
+  });
 
-      const { data, error } = await supabaseClient
-        .from('leads')
-        .select('id, nome, telefone, email, status, origem, created_at')
-        .order('created_at', { ascending: false });
+  carregarLeads();
+</script>
 
-      carregando.style.display = 'none';
-
-      if (error) {
-        erroDiv.textContent = "Erro ao carregar leads: " + error.message;
-        erroDiv.style.display = 'block';
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        erroDiv.textContent = "Nenhum lead encontrado.";
-        erroDiv.style.display = 'block';
-        return;
-      }
-
-      tabela.style.display = 'table';
-
-      data.forEach(lead => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${lead.nome ?? '-'}</td>
-          <td>${lead.telefone ?? '-'}</td>
-          <td>${lead.email ?? '-'}</td>
-          <td>${lead.origem ?? '-'}</td>
-          <td><span class="status-badge ${classeStatus(lead.status)}">${lead.status ?? '-'}</span></td>
-          <td>${formatarData(lead.created_at)}</td>
-        `;
-        corpo.appendChild(tr);
-      });
-    }
-
-    // Protege a página: se não houver sessão, volta pro login
-    supabaseClient.auth.getSession().then(({ data }) => {
-      if (!data.session) {
-        window.location.href = "index.html";
-      } else {
-        document.getElementById('emailUsuario').textContent = data.session.user.email;
-        carregarLeads();
-      }
-    });
-  </script>
 </body>
 </html>
