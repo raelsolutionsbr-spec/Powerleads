@@ -2,100 +2,274 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dashboard de Leads - Power Seguros</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  body { font-family: Arial, sans-serif; background: #0f1117; color: #eee; padding: 20px; }
-  h1 { color: #4dd0e1; }
-  .filtros { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
-  select, input { padding: 6px; border-radius: 4px; border: none; background: #1f2230; color: #eee; }
-  table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-  th, td { padding: 8px 12px; border-bottom: 1px solid #333; text-align: left; }
-  th { background: #1f2230; color: #4dd0e1; }
-  tr:hover { background: #1a1d29; }
-  .badge { padding: 3px 8px; border-radius: 12px; font-size: 12px; }
-  .quente { background: #e53935; }
-  .morno { background: #fb8c00; }
-  .frio { background: #1e88e5; }
-  .novo { background: #43a047; }
-  .fechado { background: #6d4c41; }
-  .perdido { background: #757575; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background:#0f1117; color:#eee; margin:0; padding:0; }
+  header.topbar {
+    display:flex; justify-content:space-between; align-items:center;
+    background:#1a1d29; padding:14px 24px; border-bottom:1px solid #2a2e3d;
+  }
+  header.topbar h1 { color:#4dd0e1; font-size:20px; margin:0; }
+  .topbar-actions { display:flex; gap:10px; }
+  button, .btn {
+    padding:9px 16px; border-radius:6px; border:none; cursor:pointer;
+    font-weight:600; font-size:14px; text-decoration:none; display:inline-block;
+  }
+  .btn-primary { background:#4dd0e1; color:#0f1117; }
+  .btn-outline { background:transparent; color:#4dd0e1; border:1px solid #4dd0e1; }
+  .btn-danger { background:transparent; color:#e57373; border:1px solid #e57373; }
+  .btn-disparo { background:#43a047; color:#fff; }
+
+  .container { padding:24px; max-width:1400px; margin:0 auto; }
+
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:24px; }
+  .card { background:#1f2230; border-radius:10px; padding:16px; border-left:4px solid #4dd0e1; }
+  .card h3 { margin:0 0 6px; font-size:13px; color:#9aa0b4; font-weight:500; }
+  .card p { margin:0; font-size:26px; font-weight:700; }
+  .card.quente { border-left-color:#e53935; }
+  .card.novo { border-left-color:#43a047; }
+  .card.fechado { border-left-color:#6d4c41; }
+
+  .filtros { margin-bottom:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  select, input { padding:8px 10px; border-radius:6px; border:1px solid #2a2e3d; background:#1f2230; color:#eee; }
+  input::placeholder { color:#777; }
+
+  table { width:100%; border-collapse:collapse; margin-top:10px; background:#1a1d29; border-radius:10px; overflow:hidden; }
+  th, td { padding:10px 14px; border-bottom:1px solid #2a2e3d; text-align:left; font-size:14px; }
+  th { background:#1f2230; color:#4dd0e1; position:sticky; top:0; }
+  tr:hover { background:#20232f; }
+
+  .badge { padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; text-transform:capitalize; }
+  .quente { background:#e53935; color:#fff; }
+  .morno { background:#fb8c00; color:#fff; }
+  .frio { background:#1e88e5; color:#fff; }
+  .novo { background:#43a047; color:#fff; }
+  .em_contato { background:#8e24aa; color:#fff; }
+  .negociando { background:#fbc02d; color:#000; }
+  .fechado { background:#6d4c41; color:#fff; }
+  .perdido { background:#757575; color:#fff; }
+
+  .acoes { display:flex; gap:6px; }
+  .acoes button { padding:5px 8px; font-size:12px; }
+
+  .paginacao { display:flex; justify-content:center; gap:8px; margin-top:16px; }
+  .paginacao button { background:#1f2230; color:#eee; }
+  .paginacao button.ativo { background:#4dd0e1; color:#0f1117; }
+
+  /* Modal */
+  .modal-overlay {
+    display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:999;
+  }
+  .modal-overlay.ativo { display:flex; }
+  .modal {
+    background:#1a1d29; padding:24px; border-radius:10px; width:400px; max-width:90%;
+  }
+  .modal h2 { color:#4dd0e1; margin-top:0; font-size:18px; }
+  .modal label { display:block; margin:12px 0 4px; font-size:13px; color:#9aa0b4; }
+  .modal select, .modal input, .modal textarea { width:100%; }
+  .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+
+  .toast {
+    position:fixed; bottom:20px; right:20px; background:#43a047; color:#fff;
+    padding:12px 20px; border-radius:8px; display:none; z-index:1000;
+  }
 </style>
 </head>
 <body>
 
-<h1>📋 Leads - Power Seguros</h1>
+<header class="topbar">
+  <h1>📋 Leads - Power Seguros</h1>
+  <div class="topbar-actions">
+    <a href="cadastro.html" class="btn btn-outline">+ Novo Lead</a>
+    <button class="btn-disparo" onclick="dispararLeadsDoDia()">📤 Disparar Leads do Dia</button>
+    <button class="btn-danger" onclick="sair()">Sair</button>
+  </div>
+</header>
 
-<div class="filtros">
-  <select id="filtroStatus">
-    <option value="">Todos os status</option>
-    <option value="novo">Novo</option>
-    <option value="em_contato">Em contato</option>
-    <option value="negociando">Negociando</option>
-    <option value="fechado">Fechado</option>
-    <option value="perdido">Perdido</option>
-  </select>
+<div class="container">
 
-  <select id="filtroClassificacao">
-    <option value="">Todas as classificações</option>
-    <option value="quente">Quente</option>
-    <option value="morno">Morno</option>
-    <option value="frio">Frio</option>
-  </select>
+  <div class="cards" id="cards">
+    <div class="card"><h3>Total de Leads</h3><p id="totalLeads">0</p></div>
+    <div class="card novo"><h3>Novos Hoje</h3><p id="novosHoje">0</p></div>
+    <div class="card quente"><h3>Leads Quentes</h3><p id="totalQuentes">0</p></div>
+    <div class="card fechado"><h3>Fechados</h3><p id="totalFechados">0</p></div>
+  </div>
 
-  <input type="text" id="buscaNome" placeholder="Buscar por nome ou CNPJ..." />
-  <button onclick="carregarLeads()">🔄 Atualizar</button>
+  <div class="filtros">
+    <select id="filtroStatus">
+      <option value="">Todos os status</option>
+      <option value="novo">Novo</option>
+      <option value="em_contato">Em contato</option>
+      <option value="negociando">Negociando</option>
+      <option value="fechado">Fechado</option>
+      <option value="perdido">Perdido</option>
+    </select>
+
+    <select id="filtroClassificacao">
+      <option value="">Todas as classificações</option>
+      <option value="quente">Quente</option>
+      <option value="morno">Morno</option>
+      <option value="frio">Frio</option>
+    </select>
+
+    <select id="filtroCorretor">
+      <option value="">Todos os corretores</option>
+    </select>
+
+    <input type="text" id="buscaNome" placeholder="Buscar por nome ou CNPJ..." />
+    <button onclick="paginaAtual=0; carregarLeads()">🔄 Atualizar</button>
+    <button onclick="exportarCSV()">⬇️ Exportar CSV</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>CNPJ</th>
+        <th>Telefone</th>
+        <th>Vidas</th>
+        <th>Classificação</th>
+        <th>Status</th>
+        <th>Operadora</th>
+        <th>Potencial</th>
+        <th>Corretor</th>
+        <th>Criado em</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaLeads">
+      <tr><td colspan="11">Carregando...</td></tr>
+    </tbody>
+  </table>
+
+  <div class="paginacao" id="paginacao"></div>
 </div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Nome</th>
-      <th>CNPJ</th>
-      <th>Telefone</th>
-      <th>Qtd. Vidas</th>
-      <th>Classificação</th>
-      <th>Status</th>
-      <th>Operadora Interesse</th>
-      <th>Potencial</th>
-      <th>Corretor</th>
-      <th>Criado em</th>
-    </tr>
-  </thead>
-  <tbody id="tabelaLeads">
-    <tr><td colspan="10">Carregando...</td></tr>
-  </tbody>
-</table>
+<!-- Modal de edição -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>Editar Lead</h2>
+    <input type="hidden" id="editId" />
+
+    <label>Status</label>
+    <select id="editStatus">
+      <option value="novo">Novo</option>
+      <option value="em_contato">Em contato</option>
+      <option value="negociando">Negociando</option>
+      <option value="fechado">Fechado</option>
+      <option value="perdido">Perdido</option>
+    </select>
+
+    <label>Classificação</label>
+    <select id="editClassificacao">
+      <option value="quente">Quente</option>
+      <option value="morno">Morno</option>
+      <option value="frio">Frio</option>
+    </select>
+
+    <label>Corretor responsável</label>
+    <select id="editCorretor"></select>
+
+    <label>Observações</label>
+    <textarea id="editObs" rows="3"></textarea>
+
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-primary" onclick="salvarEdicao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
   const SUPABASE_URL = "SUA_URL_AQUI";
   const SUPABASE_KEY = "SUA_ANON_KEY_AQUI";
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  const PAGE_SIZE = 15;
+  let paginaAtual = 0;
+  let corretoresCache = [];
+
+  function toast(msg, cor = "#43a047") {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.background = cor;
+    t.style.display = "block";
+    setTimeout(() => t.style.display = "none", 3000);
+  }
+
+  function sair() {
+    supabase.auth.signOut();
+    window.location.href = "login.html";
+  }
+
+  async function verificarSessao() {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) window.location.href = "login.html";
+  }
+
+  async function carregarCorretores() {
+    const { data, error } = await supabase.from("corretores").select("id, nome").order("nome");
+    if (error) return;
+    corretoresCache = data || [];
+
+    const filtro = document.getElementById("filtroCorretor");
+    const editSelect = document.getElementById("editCorretor");
+    filtro.innerHTML = `<option value="">Todos os corretores</option>` +
+      corretoresCache.map(c => `<option value="${c.id}">${c.nome}</option>`).join("");
+    editSelect.innerHTML = `<option value="">Não atribuído</option>` +
+      corretoresCache.map(c => `<option value="${c.id}">${c.nome}</option>`).join("");
+  }
+
+  async function carregarCards() {
+    const hoje = new Date().toISOString().split("T")[0];
+
+    const [{ count: total }, { count: novosHoje }, { count: quentes }, { count: fechados }] = await Promise.all([
+      supabase.from("leads").select("*", { count: "exact", head: true }),
+      supabase.from("leads").select("*", { count: "exact", head: true }).gte("created_at", hoje),
+      supabase.from("leads").select("*", { count: "exact", head: true }).eq("classificacao", "quente"),
+      supabase.from("leads").select("*", { count: "exact", head: true }).eq("status", "fechado"),
+    ]);
+
+    document.getElementById("totalLeads").textContent = total ?? 0;
+    document.getElementById("novosHoje").textContent = novosHoje ?? 0;
+    document.getElementById("totalQuentes").textContent = quentes ?? 0;
+    document.getElementById("totalFechados").textContent = fechados ?? 0;
+  }
+
   async function carregarLeads() {
     const status = document.getElementById("filtroStatus").value;
     const classificacao = document.getElementById("filtroClassificacao").value;
+    const corretor = document.getElementById("filtroCorretor").value;
     const busca = document.getElementById("buscaNome").value.trim();
 
     let query = supabase
       .from("leads")
-      .select("*, corretores(nome)")
-      .order("created_at", { ascending: false });
+      .select("*, corretores(id, nome)", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(paginaAtual * PAGE_SIZE, paginaAtual * PAGE_SIZE + PAGE_SIZE - 1);
 
     if (status) query = query.eq("status", status);
     if (classificacao) query = query.eq("classificacao", classificacao);
+    if (corretor) query = query.eq("corretor_id", corretor);
     if (busca) query = query.or(`nome.ilike.%${busca}%,cnpj.ilike.%${busca}%`);
 
-    const { data, error } = await query;
+    const { data, error, count } = await query;
     const tbody = document.getElementById("tabelaLeads");
 
     if (error) {
-      tbody.innerHTML = `<tr><td colspan="10">Erro: ${error.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="11">Erro: ${error.message}</td></tr>`;
       return;
     }
 
     if (!data || data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="10">Nenhum lead encontrado.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="11">Nenhum lead encontrado.</td></tr>`;
+      document.getElementById("paginacao").innerHTML = "";
       return;
     }
 
@@ -111,17 +285,108 @@
         <td>${lead.potencial || "-"}</td>
         <td>${lead.corretores?.nome || "Não atribuído"}</td>
         <td>${lead.created_at ? new Date(lead.created_at).toLocaleDateString('pt-BR') : "-"}</td>
+        <td class="acoes">
+          <button class="btn-outline" onclick="abrirModal('${lead.id}', '${lead.status}', '${lead.classificacao}', '${lead.corretor_id || ''}', \`${(lead.observacoes || '').replace(/`/g,"")}\`)">✏️</button>
+        </td>
       </tr>
     `).join("");
+
+    renderPaginacao(count);
   }
 
-  document.getElementById("filtroStatus").addEventListener("change", carregarLeads);
-  document.getElementById("filtroClassificacao").addEventListener("change", carregarLeads);
-  document.getElementById("buscaNome").addEventListener("keyup", (e) => {
-    if (e.key === "Enter") carregarLeads();
-  });
+  function renderPaginacao(count) {
+    const totalPaginas = Math.ceil(count / PAGE_SIZE);
+    const cont = document.getElementById("paginacao");
+    let html = "";
+    for (let i = 0; i < totalPaginas; i++) {
+      html += `<button class="${i === paginaAtual ? 'ativo' : ''}" onclick="irParaPagina(${i})">${i + 1}</button>`;
+    }
+    cont.innerHTML = html;
+  }
 
-  carregarLeads();
+  function irParaPagina(p) {
+    paginaAtual = p;
+    carregarLeads();
+  }
+
+  function abrirModal(id, status, classificacao, corretorId, obs) {
+    document.getElementById("editId").value = id;
+    document.getElementById("editStatus").value = status;
+    document.getElementById("editClassificacao").value = classificacao;
+    document.getElementById("editCorretor").value = corretorId;
+    document.getElementById("editObs").value = obs;
+    document.getElementById("modalOverlay").classList.add("ativo");
+  }
+
+  function fecharModal() {
+    document.getElementById("modalOverlay").classList.remove("ativo");
+  }
+
+  async function salvarEdicao() {
+    const id = document.getElementById("editId").value;
+    const status = document.getElementById("editStatus").value;
+    const classificacao = document.getElementById("editClassificacao").value;
+    const corretorId = document.getElementById("editCorretor").value || null;
+    const observacoes = document.getElementById("editObs").value;
+
+    const { error } = await supabase.from("leads").update({
+      status, classificacao, corretor_id: corretorId, observacoes
+    }).eq("id", id);
+
+    if (error) {
+      toast("Erro ao salvar: " + error.message, "#e53935");
+      return;
+    }
+
+    toast("Lead atualizado com sucesso!");
+    fecharModal();
+    carregarLeads();
+    carregarCards();
+  }
+
+  function exportarCSV() {
+    const linhas = [...document.querySelectorAll("#tabelaLeads tr")].map(tr =>
+      [...tr.children].slice(0, -1).map(td => `"${td.textContent.trim()}"`).join(",")
+    );
+    const csv = "Nome,CNPJ,Telefone,Vidas,Classificação,Status,Operadora,Potencial,Corretor,Criado em\n" + linhas.join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `leads_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+  }
+
+  // Disparo manual (chama a Edge Function que faz a distribuição real)
+  async function dispararLeadsDoDia() {
+    if (!confirm("Confirma o disparo dos leads pendentes de hoje para os corretores?")) return;
+
+    const { data, error } = await supabase.functions.invoke("disparar-leads-diarios");
+
+    if (error) {
+      toast("Erro ao disparar: " + error.message, "#e53935");
+      return;
+    }
+
+    toast(`Disparo concluído! ${data?.enviados ?? 0} leads distribuídos.`);
+    carregarLeads();
+    carregarCards();
+  }
+
+  async function init() {
+    await verificarSessao();
+    await carregarCorretores();
+    await carregarCards();
+    await carregarLeads();
+
+    document.getElementById("filtroStatus").addEventListener("change", () => { paginaAtual = 0; carregarLeads(); });
+    document.getElementById("filtroClassificacao").addEventListener("change", () => { paginaAtual = 0; carregarLeads(); });
+    document.getElementById("filtroCorretor").addEventListener("change", () => { paginaAtual = 0; carregarLeads(); });
+    document.getElementById("buscaNome").addEventListener("keyup", (e) => {
+      if (e.key === "Enter") { paginaAtual = 0; carregarLeads(); }
+    });
+  }
+
+  init();
 </script>
 
 </body>
