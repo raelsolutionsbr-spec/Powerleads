@@ -109,7 +109,7 @@
   <div class="topbar-actions">
     <a href="fila-distribuicao.html" class="btn btn-outline">📥 Fila de Distribuição</a>
     <a href="cadastro.html" class="btn btn-outline">+ Novo Lead</a>
-    <button class="btn-disparo" id="btnDisparo" onclick="dispararLeadsDoDia()">📤 Disparar Leads do Dia</button>
+    <button class="btn-disparo" id="btnDisparo" onclick="abrirModalDisparo()">📤 Disparar Leads do Dia</button>
     <button class="btn-danger" onclick="sair()">Sair</button>
   </div>
 </header>
@@ -211,6 +211,21 @@
     <div class="modal-actions">
       <button class="btn-outline" onclick="fecharModal()">Cancelar</button>
       <button class="btn-primary" id="btnSalvarEdicao" onclick="salvarEdicao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Disparo -->
+<div class="modal-overlay" id="modalDisparoOverlay">
+  <div class="modal">
+    <h2>Disparar Leads do Dia</h2>
+    <p style="color:var(--cinza); font-size:13px; margin-bottom:10px;">
+      Selecione os corretores que vão receber os leads pendentes hoje:
+    </p>
+    <div id="listaCorretoresDisparo" style="max-height:250px; overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="fecharModalDisparo()">Cancelar</button>
+      <button class="btn-disparo" id="btnConfirmarDisparo" onclick="confirmarDisparo()">📤 Disparar</button>
     </div>
   </div>
 </div>
@@ -342,7 +357,6 @@
     renderPaginacao(count);
   }
 
-  // Event delegation — evita problemas com aspas/caracteres especiais no onclick
   document.getElementById("tabelaLeads").addEventListener("click", (e) => {
     const btn = e.target.closest(".btn-editar");
     if (!btn) return;
@@ -424,24 +438,92 @@
     a.click();
   }
 
-  async function dispararLeadsDoDia() {
-    if (!confirm("Confirma o disparo dos leads pendentes de hoje para os corretores?")) return;
+  function abrirModalDisparo() {
+    const lista = document.getElementById("listaCorretoresDisparo");
+    lista.innerHTML = corretoresCache.map(c => `
+      <label style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--borda);">
+        <input type="checkbox" class="chk-corretor-disparo" value="${c.id}" checked style="width:auto;">
+        ${escapeHtml(c.nome)}
+      </label>
+    `).join("");
+    document.getElementById("modalDisparoOverlay").classList.add("ativo");
+  }
 
-    const btn = document.getElementById("btnDisparo");
-    btn.disabled = true;
-    btn.textContent = "Disparando...";
+  function fecharModalDisparo() {
+    document.getElementById("modalDisparoOverlay").classList.remove("ativo");
+  }
 
-    const { data, error } = await supabaseClient.functions.invoke("disparar-leads-diarios");
+  async function confirmarDisparo() {
+    const checkboxes = document.querySelectorAll(".chk-corretor-disparo:checked");
+    const corretorIds = [...checkboxes].map(c => c.value);
 
-    btn.disabled = false;
-    btn.textContent = "📤 Disparar Leads do Dia";
-
-    if (error) {
-      toast("Erro ao disparar: " + error.message, "#e53935");
+    if (corretorIds.length === 0) {
+      toast("Selecione ao menos um corretor.", "#fb8c00");
       return;
     }
 
-    toast(`Disparo concluído! ${data?.enviados ?? 0} leads distribuídos.`);
+    const btn = document.getElementById("btnConfirmarDisparo");
+    btn.disabled = true;
+    btn.textContent = "Disparando...";
+
+    const { data: leads, error } = await supabaseClient
+      .from("leads")
+      .select("id, nome, telefone, cnpj, qtd_vidas, operadora_interesse, corretor_id")
+      .in("corretor_id", corretorIds)
+      .is("enviado_em", null);
+
+    btn.disabled = false;
+    btn.textContent = "📤 Disparar";
+
+    if (error) {
+      toast("Erro: " + error.message, "#e53935");
+      return;
+    }
+
+    if (!leads || leads.length === 0) {
+      toast("Nenhum lead pendente para os corretores selecionados.", "#fb8c00");
+      fecharModalDisparo();
+      return;
+    }
+
+    const { data: corretoresInfo } = await supabaseClient
+      .from("corretores")
+      .select("id, nome, telefone")
+      .in("id", corretorIds);
+
+    const idsLeadsDisparados = [];
+
+    leads.forEach((lead, index) => {
+      const corretor = corretoresInfo.find(c => c.id === lead.corretor_id);
+      if (!corretor?.telefone) return;
+
+      const telLimpo = corretor.telefone.replace(/\D/g, "");
+      const telFinal = telLimpo.startsWith("55") ? telLimpo : "55" + telLimpo;
+
+      const mensagem = encodeURIComponent(
+        `📋 *Novo Lead - Power Seguros*\n\n` +
+        `👤 Empresa: ${lead.nome || "-"}\n` +
+        `📄 CNPJ: ${lead.cnpj || "-"}\n` +
+        `📞 Telefone: ${lead.telefone || "-"}\n` +
+        `👥 Vidas: ${lead.qtd_vidas || "-"}\n` +
+        `🏢 Operadora de interesse: ${lead.operadora_interesse || "-"}`
+      );
+
+      const link = `https://wa.me/${telFinal}?text=${mensagem}`;
+      idsLeadsDisparados.push(lead.id);
+
+      setTimeout(() => window.open(link, "_blank"), index * 700);
+    });
+
+    if (idsLeadsDisparados.length > 0) {
+      await supabaseClient
+        .from("leads")
+        .update({ enviado_em: new Date().toISOString() })
+        .in("id", idsLeadsDisparados);
+    }
+
+    toast(`${idsLeadsDisparados.length} disparo(s) aberto(s) no WhatsApp!`);
+    fecharModalDisparo();
     carregarLeads();
     carregarCards();
   }
