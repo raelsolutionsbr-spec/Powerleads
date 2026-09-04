@@ -30,11 +30,13 @@
     background: var(--preto-card);
   }
   header h1 { color: var(--dourado); font-size: 20px; }
-  header a {
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+  header a, header button {
     color: var(--dourado); text-decoration: none; font-size: 14px;
     border: 1px solid var(--dourado); padding: 8px 16px; border-radius: 8px;
+    background: transparent; cursor: pointer; font-family: inherit;
   }
-  header a:hover { background: var(--dourado); color: #0d0d0d; }
+  header a:hover, header button:hover { background: var(--dourado); color: #0d0d0d; }
   main { flex: 1; width: 100%; display: flex; justify-content: center; padding: 40px 20px; }
   .card {
     background: var(--preto-card); border: 1px solid var(--borda);
@@ -73,7 +75,10 @@
 
 <header>
   <h1>Powerleads</h1>
-  <a href="dashboard.html">← Voltar ao Dashboard</a>
+  <div class="header-actions">
+    <a href="dashboard.html">← Voltar ao Dashboard</a>
+    <button onclick="sair()">Sair</button>
+  </div>
 </header>
 
 <main>
@@ -104,7 +109,7 @@
 
         <div class="campo">
           <label>Quantidade de Vidas <span class="obrigatorio">*</span></label>
-          <input type="number" id="qtd_vidas" min="0" />
+          <input type="number" id="qtd_vidas" min="0" required />
           <p class="dica">O porte (pequeno/médio/grande) é calculado automaticamente pelo sistema.</p>
         </div>
 
@@ -182,6 +187,11 @@
 
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  function sair() {
+    supabaseClient.auth.signOut();
+    window.location.href = "index.html";
+  }
+
   supabaseClient.auth.getSession().then(({ data }) => {
     if (!data.session) window.location.href = "index.html";
     else carregarCorretores();
@@ -247,15 +257,23 @@
       return;
     }
 
-    const { data: sessao } = await supabaseClient.auth.getSession();
-    const emailUsuario = sessao.session?.user?.email || "sistema";
+    try {
+      const { data: sessao } = await supabaseClient.auth.getSession();
+      const emailUsuario = sessao.session?.user?.email || "sistema";
 
-    await supabaseClient.from('historico_leads').insert({
-      lead_id: leadInserido.id,
-      usuario: emailUsuario,
-      acao: "criacao",
-      observacao: "Lead cadastrado via formulário."
-    });
+      const { error: erroHistorico } = await supabaseClient.from('historico_leads').insert({
+        lead_id: leadInserido.id,
+        usuario: emailUsuario,
+        acao: "criacao",
+        observacao: "Lead cadastrado via formulário."
+      });
+
+      if (erroHistorico) {
+        console.warn("Lead salvo, mas houve erro ao registrar histórico:", erroHistorico.message);
+      }
+    } catch (e) {
+      console.warn("Falha ao registrar histórico do lead:", e);
+    }
 
     mostrarMensagem("✅ Lead cadastrado com sucesso!", "sucesso");
     document.getElementById('formLead').reset();
