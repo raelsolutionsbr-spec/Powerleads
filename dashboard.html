@@ -38,6 +38,7 @@
   .btn-danger { background:transparent; color:var(--erro); border:1px solid var(--erro); }
   .btn-danger:hover { background:var(--erro); color:#0d0d0d; }
   .btn-disparo { background:var(--sucesso); color:#fff; }
+  button:disabled { opacity:.6; cursor:not-allowed; }
 
   .container { padding:24px; max-width:1500px; margin:0 auto; }
 
@@ -80,7 +81,7 @@
   .acoes { display:flex; gap:6px; }
   .acoes button { padding:5px 8px; font-size:12px; }
 
-  .paginacao { display:flex; justify-content:center; gap:8px; margin-top:16px; }
+  .paginacao { display:flex; justify-content:center; gap:8px; margin-top:16px; flex-wrap:wrap; }
   .paginacao button { background:var(--preto-card); color:var(--branco); border:1px solid var(--borda); }
   .paginacao button.ativo { background:var(--dourado); color:#0d0d0d; }
 
@@ -108,7 +109,7 @@
   <div class="topbar-actions">
     <a href="fila-distribuicao.html" class="btn btn-outline">📥 Fila de Distribuição</a>
     <a href="cadastro.html" class="btn btn-outline">+ Novo Lead</a>
-    <button class="btn-disparo" onclick="dispararLeadsDoDia()">📤 Disparar Leads do Dia</button>
+    <button class="btn-disparo" id="btnDisparo" onclick="dispararLeadsDoDia()">📤 Disparar Leads do Dia</button>
     <button class="btn-danger" onclick="sair()">Sair</button>
   </div>
 </header>
@@ -209,7 +210,7 @@
 
     <div class="modal-actions">
       <button class="btn-outline" onclick="fecharModal()">Cancelar</button>
-      <button class="btn-primary" onclick="salvarEdicao()">Salvar</button>
+      <button class="btn-primary" id="btnSalvarEdicao" onclick="salvarEdicao()">Salvar</button>
     </div>
   </div>
 </div>
@@ -224,6 +225,16 @@
   const PAGE_SIZE = 15;
   let paginaAtual = 0;
   let corretoresCache = [];
+
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
 
   function toast(msg, cor) {
     const t = document.getElementById("toast");
@@ -251,9 +262,9 @@
     const filtro = document.getElementById("filtroCorretor");
     const editSelect = document.getElementById("editCorretor");
     filtro.innerHTML = `<option value="">Todos os corretores</option>` +
-      corretoresCache.map(c => `<option value="${c.id}">${c.nome}</option>`).join("");
+      corretoresCache.map(c => `<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join("");
     editSelect.innerHTML = `<option value="">Não atribuído</option>` +
-      corretoresCache.map(c => `<option value="${c.id}">${c.nome}</option>`).join("");
+      corretoresCache.map(c => `<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join("");
   }
 
   async function carregarCards() {
@@ -295,7 +306,7 @@
     const tbody = document.getElementById("tabelaLeads");
 
     if (error) {
-      tbody.innerHTML = `<tr><td colspan="11">Erro: ${error.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="11">Erro: ${escapeHtml(error.message)}</td></tr>`;
       return;
     }
 
@@ -307,24 +318,42 @@
 
     tbody.innerHTML = data.map(lead => `
       <tr>
-        <td>${lead.nome || "-"}</td>
-        <td>${lead.cnpj || "-"}</td>
-        <td>${lead.telefone || "-"}</td>
+        <td>${escapeHtml(lead.nome) || "-"}</td>
+        <td>${escapeHtml(lead.cnpj) || "-"}</td>
+        <td>${escapeHtml(lead.telefone) || "-"}</td>
         <td>${lead.qtd_vidas ?? "-"}</td>
-        <td>${lead.porte ? `<span class="badge ${lead.porte}">${lead.porte}</span>` : "-"}</td>
-        <td><span class="badge ${lead.classificacao || ''}">${lead.classificacao || "-"}</span></td>
-        <td><span class="badge ${lead.status || ''}">${lead.status || "-"}</span></td>
-        <td>${lead.operadora_interesse || "-"}</td>
-        <td>${lead.corretores?.nome || "Não atribuído"}</td>
+        <td>${lead.porte ? `<span class="badge ${escapeHtml(lead.porte)}">${escapeHtml(lead.porte)}</span>` : "-"}</td>
+        <td><span class="badge ${escapeHtml(lead.classificacao || '')}">${escapeHtml(lead.classificacao) || "-"}</span></td>
+        <td><span class="badge ${escapeHtml(lead.status || '')}">${escapeHtml(lead.status) || "-"}</span></td>
+        <td>${escapeHtml(lead.operadora_interesse) || "-"}</td>
+        <td>${escapeHtml(lead.corretores?.nome) || "Não atribuído"}</td>
         <td>${lead.created_at ? new Date(lead.created_at).toLocaleDateString('pt-BR') : "-"}</td>
         <td class="acoes">
-          <button class="btn-outline" onclick="abrirModal('${lead.id}', '${lead.status}', '${lead.classificacao}', '${lead.corretor_id || ''}', \`${(lead.observacoes || '').replace(/`/g,"")}\`)">✏️</button>
+          <button class="btn-outline btn-editar"
+            data-id="${lead.id}"
+            data-status="${escapeHtml(lead.status || '')}"
+            data-classificacao="${escapeHtml(lead.classificacao || '')}"
+            data-corretor="${lead.corretor_id || ''}"
+            data-obs="${escapeHtml(lead.observacoes || '')}">✏️</button>
         </td>
       </tr>
     `).join("");
 
     renderPaginacao(count);
   }
+
+  // Event delegation — evita problemas com aspas/caracteres especiais no onclick
+  document.getElementById("tabelaLeads").addEventListener("click", (e) => {
+    const btn = e.target.closest(".btn-editar");
+    if (!btn) return;
+    abrirModal(
+      btn.dataset.id,
+      btn.dataset.status,
+      btn.dataset.classificacao,
+      btn.dataset.corretor,
+      btn.dataset.obs
+    );
+  });
 
   function renderPaginacao(count) {
     const totalPaginas = Math.ceil(count / PAGE_SIZE);
@@ -345,7 +374,7 @@
     document.getElementById("editId").value = id;
     document.getElementById("editStatus").value = status;
     document.getElementById("editClassificacao").value = classificacao;
-    document.getElementById("editCorretor").value = corretorId;
+    document.getElementById("editCorretor").value = corretorId || "";
     document.getElementById("editObs").value = obs;
     document.getElementById("modalOverlay").classList.add("ativo");
   }
@@ -355,6 +384,10 @@
   }
 
   async function salvarEdicao() {
+    const btn = document.getElementById("btnSalvarEdicao");
+    btn.disabled = true;
+    btn.textContent = "Salvando...";
+
     const id = document.getElementById("editId").value;
     const status = document.getElementById("editStatus").value;
     const classificacao = document.getElementById("editClassificacao").value;
@@ -364,6 +397,9 @@
     const { error } = await supabaseClient.from("leads").update({
       status, classificacao, corretor_id: corretorId, observacoes
     }).eq("id", id);
+
+    btn.disabled = false;
+    btn.textContent = "Salvar";
 
     if (error) {
       toast("Erro ao salvar: " + error.message, "#e53935");
@@ -378,10 +414,10 @@
 
   function exportarCSV() {
     const linhas = [...document.querySelectorAll("#tabelaLeads tr")].map(tr =>
-      [...tr.children].slice(0, -1).map(td => `"${td.textContent.trim()}"`).join(",")
+      [...tr.children].slice(0, -1).map(td => `"${td.textContent.trim().replace(/"/g, '""')}"`).join(",")
     );
     const csv = "Nome,CNPJ,Telefone,Vidas,Porte,Classificação,Status,Operadora,Corretor,Criado em\n" + linhas.join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `leads_${new Date().toISOString().split("T")[0]}.csv`;
@@ -391,7 +427,14 @@
   async function dispararLeadsDoDia() {
     if (!confirm("Confirma o disparo dos leads pendentes de hoje para os corretores?")) return;
 
+    const btn = document.getElementById("btnDisparo");
+    btn.disabled = true;
+    btn.textContent = "Disparando...";
+
     const { data, error } = await supabaseClient.functions.invoke("disparar-leads-diarios");
+
+    btn.disabled = false;
+    btn.textContent = "📤 Disparar Leads do Dia";
 
     if (error) {
       toast("Erro ao disparar: " + error.message, "#e53935");
@@ -420,3 +463,6 @@
 
   init();
 </script>
+
+</body>
+</html>
