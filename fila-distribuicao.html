@@ -3,108 +3,145 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fila de Distribuição de Leads</title>
+<title>Fila de Distribuição - Power Seguros</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  * { box-sizing: border-box; }
-  body {
-    font-family: Arial, Helvetica, sans-serif;
-    background: #f4f6f8;
-    margin: 0;
-    padding: 20px;
+  :root {
+    --preto-fundo: #0d0d0d;
+    --preto-card: #1a1a1a;
+    --dourado: #d4af37;
+    --dourado-hover: #b8952e;
+    --branco: #f5f5f0;
+    --cinza: #a3a3a3;
+    --borda: #333;
+    --erro: #ff6b6b;
+    --sucesso: #4caf50;
   }
-  h1 {
-    text-align: center;
-    color: #2c3e50;
+  * { box-sizing: border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI', Arial, sans-serif; background:var(--preto-fundo); color:var(--branco); }
+
+  header.topbar {
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--preto-card); padding:16px 24px; border-bottom:1px solid var(--borda);
   }
-  .container {
-    max-width: 900px;
-    margin: 0 auto;
+  header.topbar h1 { color:var(--dourado); font-size:20px; }
+  .topbar-actions { display:flex; gap:10px; }
+  button, .btn {
+    padding:9px 16px; border-radius:8px; border:none; cursor:pointer;
+    font-weight:600; font-size:14px; text-decoration:none; display:inline-block;
+    transition: background .2s;
   }
+  .btn-outline { background:transparent; color:var(--dourado); border:1px solid var(--dourado); }
+  .btn-outline:hover { background:var(--dourado); color:#0d0d0d; }
+  .btn-danger { background:transparent; color:var(--erro); border:1px solid var(--erro); }
+  .btn-danger:hover { background:var(--erro); color:#0d0d0d; }
+  button:disabled { opacity:.6; cursor:not-allowed; }
+
+  .container { max-width:1100px; margin:0 auto; padding:24px; }
+
+  .card {
+    background:var(--preto-card); border:1px solid var(--borda);
+    border-radius:12px; padding:20px; margin-bottom:20px;
+  }
+  .card h2 { color:var(--dourado); margin-bottom:14px; font-size:16px; }
+  .card p.dica { color:var(--cinza); font-size:12px; margin-bottom:10px; }
+
+  textarea#areaColarLeads {
+    width:100%; min-height:140px; padding:12px; border-radius:8px;
+    border:1px solid var(--borda); background:#111; color:var(--branco);
+    font-family:monospace; font-size:13px; resize:vertical;
+  }
+  textarea#areaColarLeads:focus { outline:none; border-color:var(--dourado); }
+
+  .acoes-importar { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center; }
+  .btn-importar { background:var(--dourado); color:#0d0d0d; }
+  .btn-importar:hover { background:var(--dourado-hover); }
+  .btn-arquivo { background:transparent; color:var(--branco); border:1px solid var(--borda); }
+  .btn-arquivo:hover { border-color:var(--dourado); color:var(--dourado); }
+
+  .btn-distribuir { background:#1e88e5; color:#fff; width:100%; padding:14px; font-size:15px; margin-top:6px; }
+  .btn-distribuir:hover { background:#1565c0; }
+
+  .resumo-distribuicao { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-top:14px; }
+  .resumo-item { background:#111; border-radius:8px; padding:12px; border-left:3px solid var(--dourado); }
+  .resumo-item .nome { font-size:13px; color:var(--cinza); }
+  .resumo-item .qtd { font-size:22px; font-weight:700; color:var(--branco); }
+
   .lead-card {
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    padding: 16px;
-    margin-bottom: 14px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
+    background:#111; border:1px solid var(--borda); border-radius:10px;
+    padding:14px 16px; margin-bottom:10px; display:flex; justify-content:space-between;
+    align-items:center; flex-wrap:wrap; gap:10px;
   }
-  .lead-info h3 {
-    margin: 0 0 6px;
-    color: #2c3e50;
-  }
-  .lead-info p {
-    margin: 2px 0;
-    color: #555;
-    font-size: 14px;
-  }
-  .badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: bold;
-    color: #fff;
-    margin-left: 6px;
-  }
-  .badge-pequeno { background: #3498db; }
-  .badge-medio   { background: #f39c12; }
-  .badge-grande  { background: #e74c3c; }
+  .lead-info h3 { color:var(--branco); font-size:14px; margin-bottom:4px; }
+  .lead-info p { color:var(--cinza); font-size:12px; margin:2px 0; }
+  .badge { padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; color:#fff; margin-left:6px; }
+  .badge-pequeno { background:#455a64; }
+  .badge-medio { background:#00838f; }
+  .badge-grande { background:var(--dourado); color:#000; }
 
-  .btn-confirmar {
-    background: #25d366;
-    color: #fff;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-  }
-  .btn-confirmar:hover { background: #1ebc59; }
+  .btn-confirmar { background:#25d366; color:#fff; padding:8px 14px; font-size:13px; }
+  .btn-confirmar:hover { background:#1ebc59; }
 
-  .btn-sair {
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    background: #e74c3c;
-    color: #fff;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    z-index: 1000;
-  }
-  .btn-sair:hover { background: #c0392b; }
+  .empty, .loading { text-align:center; color:var(--cinza); padding:30px; }
 
-  .empty {
-    text-align: center;
-    color: #888;
-    margin-top: 40px;
-    font-size: 16px;
+  .toast {
+    position:fixed; bottom:20px; right:20px; background:var(--sucesso); color:#fff;
+    padding:12px 20px; border-radius:8px; display:none; z-index:1000;
   }
 
-  .loading {
-    text-align: center;
-    color: #888;
-    margin-top: 40px;
-  }
+  @media (max-width:600px) { .acoes-importar { flex-direction:column; align-items:stretch; } }
 </style>
 </head>
 <body>
 
-<button class="btn-sair" onclick="sair()">Sair</button>
+<header class="topbar">
+  <h1>📥 Fila de Distribuição - Power Seguros</h1>
+  <div class="topbar-actions">
+    <a href="dashboard.html" class="btn btn-outline">← Dashboard</a>
+    <button class="btn-danger" onclick="sair()">Sair</button>
+  </div>
+</header>
 
 <div class="container">
-  <h1>📋 Fila de Distribuição de Leads</h1>
-  <div id="listaLeads" class="loading">Carregando leads...</div>
+
+  <!-- Bloco de importação em massa -->
+  <div class="card" id="blocoImportar">
+    <h2>📋 Colar Leads do Dia</h2>
+    <p class="dica">
+      Cole os leads no formato: <b>Nome | CNPJ | Telefone | Vidas | Porte</b> — um por linha, separado por TAB ou vírgula.<br>
+      Exemplo: <code>Empresa XYZ,12.345.678/0001-99,11999998888,7,medio</code>
+    </p>
+    <textarea id="areaColarLeads" placeholder="Cole aqui os leads (um por linha)..."></textarea>
+
+    <div class="acoes-importar">
+      <button class="btn-importar" id="btnImportar" onclick="importarLeadsColados()">📥 Importar Leads</button>
+      <label class="btn-arquivo" style="cursor:pointer;">
+        📎 Importar de arquivo CSV
+        <input type="file" id="inputArquivoCSV" accept=".csv" style="display:none" onchange="importarArquivoCSV(event)">
+      </label>
+      <span id="statusImportacao" style="color:var(--cinza); font-size:13px;"></span>
+    </div>
+  </div>
+
+  <!-- Bloco de distribuição automática -->
+  <div class="card">
+    <h2>⚡ Distribuição Automática</h2>
+    <p class="dica">Distribui os leads pendentes igualmente entre os corretores ativos (round-robin).</p>
+    <button class="btn-distribuir" id="btnDistribuir" onclick="distribuirAutomaticamente()">
+      🔀 Distribuir Leads Pendentes Automaticamente
+    </button>
+    <div class="resumo-distribuicao" id="resumoDistribuicao"></div>
+  </div>
+
+  <!-- Fila manual (leads sem corretor, com sugestão) -->
+  <div class="card">
+    <h2>👥 Fila Manual (revisão individual)</h2>
+    <div id="listaLeads" class="loading">Carregando leads...</div>
+  </div>
+
 </div>
 
-<!-- Biblioteca do Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<div class="toast" id="toast"></div>
 
 <script>
   const SUPABASE_URL = "https://uifwnzgkxsacxpfnqbak.supabase.co";
@@ -113,17 +150,42 @@
 
   const listaLeads = document.getElementById("listaLeads");
 
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function toast(msg, cor) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.background = cor || "#4caf50";
+    t.style.display = "block";
+    setTimeout(() => t.style.display = "none", 3000);
+  }
+
   function sair() {
     supabaseClient.auth.signOut();
     window.location.href = "index.html";
   }
 
-  async function verificarSessao() {
-    const { data } = await supabaseClient.auth.getSession();
-    if (!data.session) {
-      window.location.href = "index.html";
+  async function verificarAcesso() {
+    const { data: sessao } = await supabaseClient.auth.getSession();
+    if (!sessao.session) { window.location.href = "index.html"; return false; }
+
+    const { data: usuario, error } = await supabaseClient
+      .from("usuarios")
+      .select("role, nome")
+      .eq("id", sessao.session.user.id)
+      .single();
+
+    if (error || !usuario || !["admin", "gestor"].includes(usuario.role)) {
+      alert("Acesso restrito a administradores e gestores.");
+      window.location.href = "dashboard.html";
       return false;
     }
+
     return true;
   }
 
@@ -134,103 +196,259 @@
     return "";
   }
 
+  function calcularPorte(vidas) {
+    if (!vidas) return "pequeno";
+    if (vidas >= 10) return "grande";
+    if (vidas >= 5) return "medio";
+    return "pequeno";
+  }
+
+  // ---------- IMPORTAÇÃO (colar texto) ----------
+  function parseLinhaLead(linha) {
+    const separador = linha.includes("\t") ? "\t" : ",";
+    const partes = linha.split(separador).map(p => p.trim());
+    const [nome, cnpj, telefone, vidasStr, porteStr] = partes;
+
+    if (!nome) return null;
+
+    const vidas = vidasStr ? parseInt(vidasStr.replace(/\D/g, "")) : null;
+    const porte = (porteStr || "").toLowerCase();
+    const porteValido = ["pequeno", "medio", "grande"].includes(porte) ? porte : calcularPorte(vidas);
+
+    return {
+      nome,
+      cnpj: cnpj || null,
+      telefone: telefone ? telefone.replace(/\D/g, "") : null,
+      qtd_vidas: vidas,
+      porte: porteValido,
+      status: "novo",
+      classificacao: "frio",
+      corretor_id: null,
+      created_at: new Date().toISOString()
+    };
+  }
+
+  async function importarLeadsColados() {
+    const texto = document.getElementById("areaColarLeads").value.trim();
+    const status = document.getElementById("statusImportacao");
+    const btn = document.getElementById("btnImportar");
+
+    if (!texto) { toast("Cole os dados antes de importar.", "#e53935"); return; }
+
+    const linhas = texto.split("\n").map(l => l.trim()).filter(Boolean);
+    const leads = linhas.map(parseLinhaLead).filter(Boolean);
+
+    if (leads.length === 0) {
+      toast("Nenhum lead válido encontrado no texto colado.", "#e53935");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Importando...";
+    status.textContent = `Processando ${leads.length} leads...`;
+
+    const { error } = await supabaseClient.from("leads").insert(leads);
+
+    btn.disabled = false;
+    btn.textContent = "📥 Importar Leads";
+
+    if (error) {
+      toast("Erro ao importar: " + error.message, "#e53935");
+      status.textContent = "Erro na importação.";
+      return;
+    }
+
+    toast(`${leads.length} leads importados com sucesso!`);
+    status.textContent = `✅ ${leads.length} leads importados.`;
+    document.getElementById("areaColarLeads").value = "";
+    carregarResumoDistribuicao();
+    carregarLeads();
+  }
+
+  // ---------- IMPORTAÇÃO (arquivo CSV) ----------
+  function importarArquivoCSV(event) {
+    const arquivo = event.target.files[0];
+    if (!arquivo) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const texto = e.target.result;
+      document.getElementById("areaColarLeads").value = texto;
+      toast("Arquivo carregado. Revise e clique em Importar.", "#1e88e5");
+    };
+    reader.readAsText(arquivo, "UTF-8");
+    event.target.value = "";
+  }
+
+  // ---------- DISTRIBUIÇÃO AUTOMÁTICA ----------
+  async function distribuirAutomaticamente() {
+    const btn = document.getElementById("btnDistribuir");
+    btn.disabled = true;
+    btn.textContent = "Distribuindo...";
+
+    const { data: leadsSemCorretor, error: erroLeads } = await supabaseClient
+      .from("leads")
+      .select("id")
+      .is("corretor_id", null)
+      .eq("status", "novo")
+      .order("created_at", { ascending: true });
+
+    const { data: corretores, error: erroCorretores } = await supabaseClient
+      .from("usuarios")
+      .select("id, nome")
+      .eq("role", "corretor")
+      .eq("ativo", true)
+      .order("nome");
+
+    btn.disabled = false;
+    btn.textContent = "🔀 Distribuir Leads Pendentes Automaticamente";
+
+    if (erroLeads || erroCorretores) {
+      toast("Erro ao buscar dados: " + (erroLeads?.message || erroCorretores?.message), "#e53935");
+      return;
+    }
+
+    if (!leadsSemCorretor?.length) {
+      toast("Não há leads pendentes para distribuir.", "#fb8c00");
+      return;
+    }
+
+    if (!corretores?.length) {
+      toast("Nenhum corretor ativo cadastrado.", "#e53935");
+      return;
+    }
+
+    const contagem = {};
+    corretores.forEach(c => contagem[c.id] = 0);
+
+    const atualizacoes = leadsSemCorretor.map((lead, i) => {
+      const corretor = corretores[i % corretores.length];
+      contagem[corretor.id]++;
+      return { id: lead.id, corretor_id: corretor.id };
+    });
+
+    for (const item of atualizacoes) {
+      await supabaseClient.from("leads")
+        .update({ corretor_id: item.corretor_id, status: "atribuido" })
+        .eq("id", item.id);
+    }
+
+    const resumoHtml = corretores.map(c => `
+      <div class="resumo-item">
+        <div class="nome">${escapeHtml(c.nome)}</div>
+        <div class="qtd">${contagem[c.id]} leads</div>
+      </div>
+    `).join("");
+    document.getElementById("resumoDistribuicao").innerHTML = resumoHtml;
+
+    toast(`${leadsSemCorretor.length} leads distribuídos entre ${corretores.length} corretores!`);
+    carregarLeads();
+  }
+
+  async function carregarResumoDistribuicao() {
+    const { data: corretores } = await supabaseClient
+      .from("usuarios")
+      .select("id, nome")
+      .eq("role", "corretor")
+      .eq("ativo", true)
+      .order("nome");
+
+    if (!corretores?.length) return;
+
+    const hoje = new Date().toISOString().split("T")[0];
+    const resumoHtml = await Promise.all(corretores.map(async c => {
+      const { count } = await supabaseClient
+        .from("leads")
+        .select("*", { count: "exact", head: true })
+        .eq("corretor_id", c.id)
+        .gte("created_at", hoje);
+      return `
+        <div class="resumo-item">
+          <div class="nome">${escapeHtml(c.nome)}</div>
+          <div class="qtd">${count ?? 0} leads hoje</div>
+        </div>
+      `;
+    }));
+    document.getElementById("resumoDistribuicao").innerHTML = resumoHtml.join("");
+  }
+
+  // ---------- FILA MANUAL (revisão individual) ----------
   async function carregarLeads() {
-    listaLeads.innerHTML = "Carregando leads...";
+    listaLeads.innerHTML = '<p class="loading">Carregando leads...</p>';
 
     const { data: leads, error } = await supabaseClient
       .from("leads")
       .select("*")
       .is("corretor_id", null)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .limit(20);
 
     if (error) {
-      listaLeads.innerHTML = `<p class="empty">Erro ao carregar leads: ${error.message}</p>`;
+      listaLeads.innerHTML = `<p class="empty">Erro ao carregar leads: ${escapeHtml(error.message)}</p>`;
       return;
     }
 
     if (!leads || leads.length === 0) {
-      listaLeads.innerHTML = `<p class="empty">Nenhum lead pendente no momento 🎉</p>`;
+      listaLeads.innerHTML = `<p class="empty">Nenhum lead pendente 🎉</p>`;
       return;
     }
+
+    const { data: corretores } = await supabaseClient
+      .from("usuarios")
+      .select("id, nome, leads_hoje")
+      .eq("role", "corretor")
+      .eq("ativo", true)
+      .order("leads_hoje", { ascending: true });
 
     listaLeads.innerHTML = "";
 
     for (const lead of leads) {
-      const corretorSugerido = await sugerirCorretor(lead);
+      const corretorSugerido = corretores?.[0] || null;
       const card = document.createElement("div");
       card.className = "lead-card";
 
       card.innerHTML = `
         <div class="lead-info">
-          <h3>${lead.nome || "Sem nome"}
-            <span class="badge ${classePorte(lead.porte)}">${lead.porte || "-"}</span>
+          <h3>${escapeHtml(lead.nome) || "Sem nome"}
+            <span class="badge ${classePorte(lead.porte)}">${escapeHtml(lead.porte) || "-"}</span>
           </h3>
-          <p>📞 ${lead.telefone || "Sem telefone"}</p>
+          <p>📞 ${escapeHtml(lead.telefone) || "Sem telefone"}</p>
           <p>👥 Vidas: ${lead.qtd_vidas ?? "-"}</p>
-          <p>🧑‍💼 Corretor sugerido: <strong>${corretorSugerido ? corretorSugerido.nome : "Nenhum disponível"}</strong></p>
+          <p>🧑‍💼 Sugestão: <strong>${corretorSugerido ? escapeHtml(corretorSugerido.nome) : "Nenhum disponível"}</strong></p>
         </div>
         <button class="btn-confirmar" ${!corretorSugerido ? "disabled" : ""}>
-          ✅ Confirmar e Disparar WhatsApp
+          ✅ Confirmar
         </button>
       `;
 
-      const btn = card.querySelector("button");
-      btn.addEventListener("click", () => confirmarDistribuicao(lead, corretorSugerido));
-
+      card.querySelector("button").addEventListener("click", () => confirmarLead(lead, corretorSugerido));
       listaLeads.appendChild(card);
     }
   }
 
-  async function sugerirCorretor(lead) {
-    const { data: corretores, error } = await supabaseClient
-      .from("corretores")
-      .select("*")
-      .eq("ativo", true)
-      .lte("leads_hoje", 4)
-      .order("leads_hoje", { ascending: true })
-      .limit(1);
-
-    if (error || !corretores || corretores.length === 0) return null;
-    return corretores[0];
-  }
-
-  async function confirmarDistribuicao(lead, corretor) {
+  async function confirmarLead(lead, corretor) {
     if (!corretor) return;
 
     const { error } = await supabaseClient
       .from("leads")
-      .update({
-        corretor_id: corretor.id,
-        status: "atribuido",
-        atribuido_em: new Date().toISOString()
-      })
+      .update({ corretor_id: corretor.id, status: "atribuido" })
       .eq("id", lead.id);
 
     if (error) {
-      alert("Erro ao confirmar distribuição: " + error.message);
+      toast("Erro ao confirmar: " + error.message, "#e53935");
       return;
     }
 
-    const mensagem = encodeURIComponent(
-      `Olá ${corretor.nome}! Você recebeu um novo lead:\n\n` +
-      `Nome: ${lead.nome}\n` +
-      `Telefone: ${lead.telefone}\n` +
-      `Qtd. de vidas: ${lead.qtd_vidas}\n` +
-      `Porte: ${lead.porte}\n\n` +
-      `Por favor, entre em contato o mais rápido possível!`
-    );
-
-    const numeroCorretor = corretor.telefone.replace(/\D/g, "");
-    const linkWhatsApp = `https://wa.me/55${numeroCorretor}?text=${mensagem}`;
-
-    window.open(linkWhatsApp, "_blank");
-
+    toast(`Lead atribuído a ${corretor.nome}`);
     carregarLeads();
+    carregarResumoDistribuicao();
   }
 
   async function init() {
-    const logado = await verificarSessao();
-    if (logado) carregarLeads();
+    const ok = await verificarAcesso();
+    if (!ok) return;
+    await carregarResumoDistribuicao();
+    await carregarLeads();
   }
 
   init();
