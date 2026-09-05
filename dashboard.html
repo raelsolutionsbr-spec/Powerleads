@@ -368,13 +368,16 @@
 
     // Define o link correto do manual conforme o perfil
     const linkManual = document.getElementById("linkManual");
-    if (role === "admin") {
-      linkManual.href = "manual-admin.html";
-    } else if (role === "corretor") {
-      linkManual.href = "manual-corretor.html";
-    } else {
-      linkManual.classList.add("oculto"); // esconde se não for admin nem corretor
-    }
+const BASE_MANUAL = "https://raelsolutionsbr-spec.github.io/manuais-distribuidordeleads/";
+
+if (role === "admin") {
+  linkManual.href = BASE_MANUAL + "manual-admin.html";
+} else if (role === "corretor") {
+  linkManual.href = BASE_MANUAL + "manual-corretor.html";
+} else {
+  linkManual.classList.add("oculto");
+}
+
   }
 
 
