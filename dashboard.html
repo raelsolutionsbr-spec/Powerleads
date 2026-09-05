@@ -23,9 +23,25 @@
   header.topbar {
     display:flex; justify-content:space-between; align-items:center;
     background:var(--preto-card); padding:16px 24px; border-bottom:1px solid var(--borda);
+    flex-wrap:wrap; gap:10px;
   }
   header.topbar h1 { color:var(--dourado); font-size:20px; margin:0; }
-  .topbar-actions { display:flex; gap:10px; }
+  .topbar-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+  .usuario-logado {
+    display:flex; align-items:center; gap:8px;
+    background:#111; padding:6px 12px; border-radius:8px;
+    border:1px solid var(--borda); font-size:13px;
+  }
+  .usuario-logado .nome { color:var(--branco); font-weight:600; }
+  .usuario-logado .role {
+    font-size:11px; text-transform:uppercase; padding:2px 8px;
+    border-radius:10px; font-weight:700;
+  }
+  .role-admin { background:var(--dourado); color:#0d0d0d; }
+  .role-gestor { background:#8e24aa; color:#fff; }
+  .role-corretor { background:#1e88e5; color:#fff; }
+
   button, .btn {
     padding:9px 16px; border-radius:8px; border:none; cursor:pointer;
     font-weight:600; font-size:14px; text-decoration:none; display:inline-block;
@@ -100,6 +116,8 @@
     position:fixed; bottom:20px; right:20px; background:var(--sucesso); color:#fff;
     padding:12px 20px; border-radius:8px; display:none; z-index:1000;
   }
+
+  .oculto { display:none !important; }
 </style>
 </head>
 <body>
@@ -107,7 +125,12 @@
 <header class="topbar">
   <h1>📋 Powerleads - Power Seguros</h1>
   <div class="topbar-actions">
-    <a href="fila-distribuicao.html" class="btn btn-outline">📥 Fila de Distribuição</a>
+    <div class="usuario-logado">
+      <span class="nome" id="usuarioNome">Carregando...</span>
+      <span class="role" id="usuarioRole"></span>
+    </div>
+    <button class="btn-outline" onclick="abrirModalSenha()">🔒 Alterar Senha</button>
+    <a href="fila-distribuicao.html" class="btn btn-outline" id="btnFilaDistribuicao">📥 Fila de Distribuição</a>
     <a href="cadastro.html" class="btn btn-outline">+ Novo Lead</a>
     <button class="btn-disparo" id="btnDisparo" onclick="abrirModalDisparo()">📤 Disparar Leads do Dia</button>
     <button class="btn-danger" onclick="sair()">Sair</button>
@@ -167,7 +190,7 @@
         <th>Classificação</th>
         <th>Status</th>
         <th>Operadora</th>
-        <th>Corretor</th>
+        <th id="thCorretor">Corretor</th>
         <th>Criado em</th>
         <th>Ações</th>
       </tr>
@@ -202,7 +225,7 @@
       <option value="frio">Frio</option>
     </select>
 
-    <label>Corretor responsável</label>
+    <label id="labelEditCorretor">Corretor responsável</label>
     <select id="editCorretor"></select>
 
     <label>Observações</label>
@@ -230,6 +253,22 @@
   </div>
 </div>
 
+<!-- Modal de Alterar Senha -->
+<div class="modal-overlay" id="modalSenhaOverlay">
+  <div class="modal">
+    <h2>Alterar Senha</h2>
+    <label>Nova senha</label>
+    <input type="password" id="novaSenha" placeholder="Digite a nova senha" minlength="6" />
+    <label>Confirmar nova senha</label>
+    <input type="password" id="confirmarSenha" placeholder="Confirme a nova senha" minlength="6" />
+    <p id="erroSenha" style="color:var(--erro); font-size:12px; margin-top:8px; min-height:14px;"></p>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="fecharModalSenha()">Cancelar</button>
+      <button class="btn-primary" id="btnSalvarSenha" onclick="salvarNovaSenha()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -240,6 +279,7 @@
   const PAGE_SIZE = 15;
   let paginaAtual = 0;
   let corretoresCache = [];
+  let usuarioAtual = { id: null, nome: "", role: "" };
 
   function escapeHtml(str) {
     if (str === null || str === undefined) return "";
@@ -266,7 +306,48 @@
 
   async function verificarSessao() {
     const { data } = await supabaseClient.auth.getSession();
-    if (!data.session) window.location.href = "index.html";
+    if (!data.session) {
+      window.location.href = "index.html";
+      return null;
+    }
+    return data.session;
+  }
+
+  async function carregarUsuarioLogado(session) {
+    const userId = session.user.id;
+
+    const { data, error } = await supabaseClient
+      .from("usuarios")
+      .select("id, nome, role")
+      .eq("id", userId)
+      .single();
+
+    if (error || !data) {
+      document.getElementById("usuarioNome").textContent = session.user.email;
+      document.getElementById("usuarioRole").textContent = "";
+      return;
+    }
+
+    usuarioAtual = data;
+
+    document.getElementById("usuarioNome").textContent = data.nome;
+    const roleEl = document.getElementById("usuarioRole");
+    roleEl.textContent = data.role;
+    roleEl.className = "role role-" + data.role;
+
+    aplicarRestricoesPorPerfil(data.role);
+  }
+
+  function aplicarRestricoesPorPerfil(role) {
+    const ehCorretor = role === "corretor";
+
+    // Corretor não vê coluna Corretor, filtro de corretor, nem dispara leads
+    document.getElementById("thCorretor").classList.toggle("oculto", ehCorretor);
+    document.getElementById("filtroCorretor").classList.toggle("oculto", ehCorretor);
+    document.getElementById("btnDisparo").classList.toggle("oculto", ehCorretor);
+    document.getElementById("btnFilaDistribuicao").classList.toggle("oculto", ehCorretor);
+    document.getElementById("labelEditCorretor").classList.toggle("oculto", ehCorretor);
+    document.getElementById("editCorretor").classList.toggle("oculto", ehCorretor);
   }
 
   async function carregarCorretores() {
@@ -331,6 +412,8 @@
       return;
     }
 
+    const ehCorretor = usuarioAtual.role === "corretor";
+
     tbody.innerHTML = data.map(lead => `
       <tr>
         <td>${escapeHtml(lead.nome) || "-"}</td>
@@ -341,7 +424,7 @@
         <td><span class="badge ${escapeHtml(lead.classificacao || '')}">${escapeHtml(lead.classificacao) || "-"}</span></td>
         <td><span class="badge ${escapeHtml(lead.status || '')}">${escapeHtml(lead.status) || "-"}</span></td>
         <td>${escapeHtml(lead.operadora_interesse) || "-"}</td>
-        <td>${escapeHtml(lead.corretores?.nome) || "Não atribuído"}</td>
+        <td class="${ehCorretor ? 'oculto' : ''}">${escapeHtml(lead.corretores?.nome) || "Não atribuído"}</td>
         <td>${lead.created_at ? new Date(lead.created_at).toLocaleDateString('pt-BR') : "-"}</td>
         <td class="acoes">
           <button class="btn-outline btn-editar"
@@ -405,12 +488,14 @@
     const id = document.getElementById("editId").value;
     const status = document.getElementById("editStatus").value;
     const classificacao = document.getElementById("editClassificacao").value;
-    const corretorId = document.getElementById("editCorretor").value || null;
+    const ehCorretor = usuarioAtual.role === "corretor";
+    const corretorId = ehCorretor ? undefined : (document.getElementById("editCorretor").value || null);
     const observacoes = document.getElementById("editObs").value;
 
-    const { error } = await supabaseClient.from("leads").update({
-      status, classificacao, corretor_id: corretorId, observacoes
-    }).eq("id", id);
+    const payload = { status, classificacao, observacoes };
+    if (corretorId !== undefined) payload.corretor_id = corretorId;
+
+    const { error } = await supabaseClient.from("leads").update(payload).eq("id", id);
 
     btn.disabled = false;
     btn.textContent = "Salvar";
@@ -528,8 +613,57 @@
     carregarCards();
   }
 
+  function abrirModalSenha() {
+    document.getElementById("novaSenha").value = "";
+    document.getElementById("confirmarSenha").value = "";
+    document.getElementById("erroSenha").textContent = "";
+    document.getElementById("modalSenhaOverlay").classList.add("ativo");
+  }
+
+  function fecharModalSenha() {
+    document.getElementById("modalSenhaOverlay").classList.remove("ativo");
+  }
+
+  async function salvarNovaSenha() {
+    const nova = document.getElementById("novaSenha").value;
+    const confirmar = document.getElementById("confirmarSenha").value;
+    const erroEl = document.getElementById("erroSenha");
+    const btn = document.getElementById("btnSalvarSenha");
+
+    erroEl.textContent = "";
+
+    if (!nova || nova.length < 6) {
+      erroEl.textContent = "A senha deve ter no mínimo 6 caracteres.";
+      return;
+    }
+
+    if (nova !== confirmar) {
+      erroEl.textContent = "As senhas não coincidem.";
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Salvando...";
+
+    const { error } = await supabaseClient.auth.updateUser({ password: nova });
+
+    btn.disabled = false;
+    btn.textContent = "Salvar";
+
+    if (error) {
+      erroEl.textContent = "Erro: " + error.message;
+      return;
+    }
+
+    toast("Senha alterada com sucesso!");
+    fecharModalSenha();
+  }
+
   async function init() {
-    await verificarSessao();
+    const session = await verificarSessao();
+    if (!session) return;
+
+    await carregarUsuarioLogado(session);
     await carregarCorretores();
     await carregarCards();
     await carregarLeads();
