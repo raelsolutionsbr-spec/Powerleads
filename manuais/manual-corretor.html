@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power Leads — Guia do Corretor — Resumo Visual Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#ffffff; --paper-warm:#f5f7fa; --paper-card:#eef2f7;
+  --ink:#1a2233; --ink-soft:#3d4a5c; --ink-mute:#6b7689;
+  --accent:#2563eb; --accent-soft:#dbeafe; --positive:#16a34a; --warning:#ea580c; --rule:#d4dae3;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--paper-warm);color:var(--ink);line-height:1.6;}
+h1,h2,h3,h4{font-family:'Plus Jakarta Sans',sans-serif;color:var(--ink);}
+a{color:var(--accent);}
+.wrap{max-width:1200px;margin:0 auto;padding:0 40px;}
+@media(max-width:900px){.wrap{padding:0 20px;}}
+
+/* HERO */
+.hero{background:var(--paper);border-bottom:1px solid var(--rule);padding:60px 0 40px;}
+.hero-inner{max-width:1200px;margin:0 auto;padding:0 40px;position:relative;}
+.badge{display:inline-flex;align-items:center;gap:8px;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:13px;padding:6px 14px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:16px;}
+.eyebrow{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-mute);font-weight:600;margin-bottom:10px;}
+.hero h1{font-size:clamp(38px,6vw,64px);font-weight:800;line-height:1.05;letter-spacing:-.01em;margin-bottom:18px;animation:fadeUp .5s ease both;}
+.hero .deck{font-size:19px;color:var(--ink-soft);max-width:640px;margin-bottom:32px;}
+.hero-meta{display:grid;grid-template-columns:repeat(3,1fr);width:100%;gap:20px;border-top:1px solid var(--rule);padding-top:24px;}
+.hero-meta div{display:flex;flex-direction:column;gap:4px;}
+.hero-meta .label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-mute);font-weight:600;}
+.hero-meta .value{font-size:16px;font-weight:700;}
+.progress-bar{height:4px;background:var(--rule);border-radius:2px;margin-top:28px;overflow:hidden;}
+.progress-bar span{display:block;width:100%;height:100%;background:var(--accent);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+/* LAYOUT */
+main{display:grid;grid-template-columns:240px 1fr;gap:48px;max-width:1200px;margin:0 auto;padding:48px 40px 80px;}
+@media(max-width:900px){main{grid-template-columns:1fr;padding:32px 20px 60px;}}
+nav.toc{position:sticky;top:24px;align-self:start;}
+nav.toc h4{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-mute);margin-bottom:14px;}
+nav.toc ol{list-style:none;counter-reset:tocnum;display:flex;flex-direction:column;gap:10px;}
+nav.toc li{counter-increment:tocnum;font-size:14px;}
+nav.toc a{color:var(--ink-soft);text-decoration:none;font-weight:500;}
+nav.toc a:hover{color:var(--accent);}
+@media(max-width:900px){nav.toc{position:static;margin-bottom:20px;}nav.toc ol{flex-direction:row;flex-wrap:wrap;gap:12px 20px;}}
+
+.tldr{background:var(--paper-card);border-radius:12px;padding:28px 32px;margin-bottom:40px;border:1px solid var(--rule);}
+.tldr h3{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:10px;}
+.tldr p{font-size:16px;color:var(--ink-soft);}
+
+section.block{margin-bottom:56px;}
+section.block h2{font-size:26px;font-weight:800;display:flex;align-items:baseline;gap:12px;margin-bottom:18px;}
+section.block h2 .num{color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:18px;}
+.card{background:var(--paper-card);border-radius:8px;padding:20px 24px;margin-bottom:14px;border:1px solid var(--rule);}
+ol.steps{list-style:none;counter-reset:step;display:flex;flex-direction:column;gap:14px;}
+ol.steps li{counter-increment:step;position:relative;padding-left:44px;background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:16px 20px 16px 52px;}
+ol.steps li::before{content:counter(step);position:absolute;left:14px;top:16px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;}
+.screenshot{border:2px dashed var(--rule);border-radius:8px;padding:40px;text-align:center;color:var(--ink-mute);font-size:14px;margin-top:10px;background:var(--paper);}
+
+blockquote.pull{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:700;color:var(--accent);border-left:3px solid var(--accent);padding:8px 24px;margin:32px 0;}
+
+.faq details{background:var(--paper);border:1px solid var(--rule);border-radius:8px;margin-bottom:12px;padding:16px 20px;}
+.faq summary{font-weight:700;cursor:pointer;font-size:15px;}
+.faq p{margin-top:10px;color:var(--ink-soft);font-size:15px;}
+
+ul.plain{padding-left:20px;color:var(--ink-soft);}
+ul.plain li{margin-bottom:8px;}
+
+.continue{background:var(--ink);color:#fff;border-radius:12px;padding:32px;margin-top:20px;}
+.continue h3{color:#fff;font-size:16px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;}
+.continue ol{padding-left:20px;display:flex;flex-direction:column;gap:10px;color:#dbe4f0;}
+
+footer{border-top:1px solid var(--rule);padding:32px 40px;text-align:center;color:var(--ink-mute);font-size:13px;}
+@media print{nav.toc{display:none;}main{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <span class="badge">Power Leads · Trilha do Corretor</span>
+    <div class="eyebrow">Resumo Visual Pro</div>
+    <h1>Guia do Corretor no Power Leads</h1>
+    <p class="deck">Tudo o que você precisa para fazer login, acompanhar seus leads e mantê-los atualizados — passo a passo, sem complicação.</p>
+    <div class="hero-meta">
+      <div><span class="label">Sistema</span><span class="value">Power Leads</span></div>
+      <div><span class="label">Perfil</span><span class="value">Corretor</span></div>
+      <div><span class="label">Desenvolvido por</span><span class="value">Rael Solutions</span></div>
+    </div>
+    <div class="progress-bar"><span></span></div>
+  </div>
+</header>
+
+<main>
+  <nav class="toc">
+    <h4>Conteúdo</h4>
+    <ol>
+      <li><a href="#s1">O que é o Power Leads</a></li>
+      <li><a href="#s2">Como fazer login</a></li>
+      <li><a href="#s3">Seus leads</a></li>
+      <li><a href="#s4">Atualizar um lead</a></li>
+      <li><a href="#s5">Cadastrar um lead</a></li>
+      <li><a href="#s6">Regras de acesso</a></li>
+      <li><a href="#s7">Suporte</a></li>
+      <li><a href="#s8">Perguntas frequentes</a></li>
+    </ol>
+  </nav>
+
+  <article>
+    <div class="tldr">
+      <h3>O essencial</h3>
+      <p>O Power Leads é o sistema onde você acompanha os leads (clientes em potencial) que foram distribuídos a você pela Power Seguros. Nele, você acessa apenas os seus próprios leads, atualiza o status de cada contato, registra observações e pode cadastrar novos leads manualmente. Qualquer dúvida ou problema técnico deve ser reportado ao suporte da Rael Solutions.</p>
+    </div>
+
+    <section class="block" id="s1">
+      <h2><span class="num">1</span> O que é o Power Leads</h2>
+      <div class="card">
+        <p>O Power Leads é o sistema de gestão de leads da Power Seguros, desenvolvido pela Rael Solutions. Ele organiza os contatos de clientes interessados em seguros e os distribui entre os corretores da equipe, permitindo que cada um acompanhe seu próprio funil de atendimento do primeiro contato até o fechamento.</p>
+      </div>
+    </section>
+
+    <section class="block" id="s2">
+      <h2><span class="num">2</span> Como fazer login</h2>
+      <ol class="steps">
+        <li>Acesse o endereço do sistema Power Leads informado pela sua gestora.</li>
+        <li>Digite seu e-mail cadastrado e sua senha.</li>
+        <li>Clique em "Entrar".</li>
+        <li>Caso tenha esquecido a senha, clique em "Esqueci minha senha" e siga as instruções enviadas por e-mail.</li>
+      </ol>
+      <div class="screenshot">[ Inserir captura de tela da tela de login ]</div>
+    </section>
+
+    <section class="block" id="s3">
+      <h2><span class="num">3</span> Visualizando seus leads</h2>
+      <ol class="steps">
+        <li>Após o login, você será direcionado à tela principal com a lista de leads atribuídos a você.</li>
+        <li>Cada lead mostra nome, contato, status atual e data do último contato.</li>
+        <li>Use os filtros de status (novo, em negociação, fechado, perdido) para organizar sua visualização.</li>
+      </ol>
+      <div class="screenshot">[ Inserir captura de tela da lista de leads ]</div>
+    </section>
+
+    <blockquote class="pull">Você só vê os leads que são seus — isso mantém o processo justo e organizado para toda a equipe.</blockquote>
+
+    <section class="block" id="s4">
+      <h2><span class="num">4</span> Como abrir e atualizar um lead</h2>
+      <ol class="steps">
+        <li>Clique sobre o nome do lead na lista para abrir os detalhes.</li>
+        <li>Atualize o campo "Status" conforme o andamento da negociação.</li>
+        <li>Adicione observações no campo de anotações (ex.: "cliente pediu retorno na sexta").</li>
+        <li>Clique em "Salvar" para confirmar as alterações.</li>
+      </ol>
+      <div class="screenshot">[ Inserir captura de tela da edição de lead ]</div>
+    </section>
+
+    <section class="block" id="s5">
+      <h2><span class="num">5</span> Como cadastrar um novo lead</h2>
+      <ol class="steps">
+        <li>Na tela principal, clique no botão "Novo Lead".</li>
+        <li>Preencha nome, telefone, e-mail e tipo de seguro de interesse.</li>
+        <li>Clique em "Salvar" — o lead será automaticamente atribuído a você.</li>
+      </ol>
+      <div class="screenshot">[ Inserir captura de tela do formulário de novo lead ]</div>
+    </section>
+
+    <section class="block" id="s6">
+      <h2><span class="num">6</span> Regras de acesso</h2>
+      <div class="card">
+        <p>No Power Leads, cada corretor vê e edita apenas os leads atribuídos a ele mesmo. Você não tem acesso aos leads de outros corretores, e eles também não têm acesso aos seus. Isso garante que cada carteira de clientes fique protegida e organizada individualmente.</p>
+      </div>
+    </section>
+
+    <section class="block" id="s7">
+      <h2><span class="num">7</span> Em caso de erro ou dúvida</h2>
+      <div class="card">
+        <p>Se o sistema apresentar erro, travar, ou você tiver alguma dúvida sobre o funcionamento, entre em contato com o suporte técnico da Rael Solutions pelos canais indicados pela sua gestora comercial. Evite tentar resolver problemas de acesso por conta própria — sempre reporte ao suporte.</p>
+      </div>
+    </section>
+
+    <section class="block" id="s8">
+      <h2><span class="num">8</span> Perguntas frequentes</h2>
+      <div class="faq">
+        <details>
+          <summary>Posso ver os leads de outro corretor?</summary>
+          <p>Não. Cada corretor só visualiza e edita os leads atribuídos a ele mesmo, por questão de organização e privacidade.</p>
+        </details>
+        <details>
+          <summary>Esqueci minha senha, o que faço?</summary>
+          <p>Na tela de login, clique em "Esqueci minha senha" e siga as instruções enviadas para o seu e-mail cadastrado.</p>
+        </details>
+        <details>
+          <summary>Um lead que cadastrei pode ser reatribuído para outro corretor?</summary>
+          <p>Sim, mas essa ação só pode ser feita por um gestor ou administrador do sistema, não pelo próprio corretor.</p>
+        </details>
+        <details>
+          <summary>O que faço se um lead ficar sem resposta por muito tempo?</summary>
+          <p>Atualize o status do lead com uma observação explicando a situação e continue o acompanhamento conforme orientação da sua gestora.</p>
+        </details>
+        <details>
+          <summary>Posso editar informações de contato de um lead?</summary>
+          <p>Sim, ao abrir os detalhes do lead você pode atualizar telefone, e-mail e demais informações de contato.</p>
+        </details>
+      </div>
+    </section>
+
+    <div class="continue">
+      <h3>Para fixar</h3>
+      <ol>
+        <li>Você sabe onde encontrar a lista de leads atribuídos a você?</li>
+        <li>Você sabe como atualizar o status de um lead após um contato?</li>
+        <li>Você sabe cadastrar um lead novo manualmente?</li>
+        <li>Você entende por que não vê os leads de outros corretores?</li>
+        <li>Você sabe a quem recorrer em caso de erro no sistema?</li>
+      </ol>
+    </div>
+  </article>
+</main>
+
+<footer>
+  Power Leads — Power Seguros · Desenvolvido por Rael Solutions<br>
+  Resumo Visual Pro · Geração 01 · Setembro 2026
+</footer>
+
+</body>
+</html>
