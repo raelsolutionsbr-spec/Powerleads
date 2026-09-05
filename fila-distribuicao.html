@@ -186,10 +186,10 @@
     setTimeout(() => t.style.display = "none", 3000);
   }
 
-  function sair() {
-    supabaseClient.auth.signOut();
-    window.location.href = "index.html";
-  }
+  async function sair() {
+  await supabaseClient.auth.signOut();
+  window.location.href = "index.html";
+}
 
   async function verificarAcesso() {
     const { data: sessao } = await supabaseClient.auth.getSession();
