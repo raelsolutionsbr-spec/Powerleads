@@ -28,9 +28,10 @@
     width: 100%; display: flex; justify-content: space-between; align-items: center;
     padding: 20px 40px; border-bottom: 1px solid var(--borda);
     background: var(--preto-card);
+    flex-wrap: wrap; gap: 10px;
   }
   header h1 { color: var(--dourado); font-size: 20px; }
-  .header-actions { display: flex; gap: 10px; align-items: center; }
+  .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   header a, header button {
     color: var(--dourado); text-decoration: none; font-size: 14px;
     border: 1px solid var(--dourado); padding: 8px 16px; border-radius: 8px;
@@ -69,6 +70,11 @@
   #mensagem.erro { background: rgba(255,107,107,.15); color: var(--erro); border: 1px solid var(--erro); }
   #mensagem.sucesso { background: rgba(76,175,80,.15); color: var(--sucesso); border: 1px solid var(--sucesso); }
   @media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
+
+  footer {
+    text-align: center; padding: 16px 8px; font-size: 12px; color: #666;
+    width: 100%;
+  }
 </style>
 </head>
 <body>
@@ -76,6 +82,7 @@
 <header>
   <h1>Powerleads</h1>
   <div class="header-actions">
+    <a href="manual.html" target="_blank">📖 Manual</a>
     <a href="dashboard.html">← Voltar ao Dashboard</a>
     <button onclick="sair()">Sair</button>
   </div>
@@ -180,6 +187,11 @@
     </form>
   </div>
 </main>
+
+<footer>
+  Sistema desenvolvido por
+  <span style="color: #1e40af; font-weight: 600;">RaelSolutions - Desenvolvimento de Software</span>
+</footer>
 
 <script>
   const SUPABASE_URL = "https://uifwnzgkxsacxpfnqbak.supabase.co";
