@@ -16,14 +16,16 @@
     --borda: #333;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
   body {
-    display: flex; justify-content: center; align-items: center;
-    height: 100vh; background: var(--preto-fundo);
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    min-height: 100vh; background: var(--preto-fundo);
     font-family: 'Segoe UI', Arial, sans-serif;
+    padding: 20px;
   }
   .box {
     background: var(--preto-card); border: 1px solid var(--borda);
-    padding: 40px; border-radius: 12px; width: 320px;
+    padding: 40px; border-radius: 12px; width: 320px; max-width: 100%;
     box-shadow: 0 8px 24px rgba(0,0,0,.5);
   }
   h2 { color: var(--dourado); text-align: center; margin-bottom: 20px; }
@@ -41,6 +43,10 @@
   button:hover { background: var(--dourado-hover); }
   button:disabled { opacity: .6; cursor: not-allowed; }
   #erro { color: #ff6b6b; font-size: 13px; text-align: center; margin-top: 10px; min-height: 16px; }
+
+  footer {
+    text-align: center; padding: 16px 8px 8px; font-size: 12px; color: #666;
+  }
 </style>
 </head>
 <body>
@@ -53,6 +59,11 @@
       <p id="erro"></p>
     </form>
   </div>
+
+  <footer style="text-align: center; padding: 16px 8px 8px; font-size: 12px; color: #666;">
+    Sistema desenvolvido por
+    <span style="color: #1e40af; font-weight: 600;">RaelSolutions - Desenvolvimento de Software</span>
+  </footer>
 
   <script>
     const SUPABASE_URL = "https://uifwnzgkxsacxpfnqbak.supabase.co";
@@ -94,10 +105,5 @@
       if (data.session) window.location.href = "dashboard.html";
     });
   </script>
-  <footer style="text-align: center; padding: 8px; font-size: 12px; color: #666;">
-  Sistema desenvolvido por 
-  <span style="color: #1e40af; font-weight: 600;">RaelSolutions - Desenvolvimento de Software</span>
-</footer>
 </body>
 </html>
-
