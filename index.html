@@ -101,9 +101,12 @@
       window.location.href = "dashboard.html";
     });
 
-    supabaseClient.auth.getSession().then(({ data }) => {
-      if (data.session) window.location.href = "dashboard.html";
-    });
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    window.location.href = "dashboard.html";
+  }
+});
+
   </script>
 </body>
 </html>
