@@ -142,6 +142,8 @@
     <button class="btn-outline" onclick="abrirModalSenha()">🔒 Alterar Senha</button>
     <a href="fila-distribuicao.html" class="btn btn-outline" id="btnFilaDistribuicao">📥 Fila de Distribuição</a>
     <a href="cadastro.html" class="btn btn-outline">+ Novo Lead</a>
+<a id="linkManual" href="#" target="_blank" class="btn btn-outline">📖 Manual</a>
+
     <button class="btn-disparo" id="btnDisparo" onclick="abrirModalDisparo()">📤 Disparar Leads do Dia</button>
     <button class="btn-danger" onclick="sair()">Sair</button>
   </div>
@@ -363,7 +365,18 @@
     document.getElementById("btnFilaDistribuicao").classList.toggle("oculto", ehCorretor);
     document.getElementById("labelEditCorretor").classList.toggle("oculto", ehCorretor);
     document.getElementById("editCorretor").classList.toggle("oculto", ehCorretor);
+
+    // Define o link correto do manual conforme o perfil
+    const linkManual = document.getElementById("linkManual");
+    if (role === "admin") {
+      linkManual.href = "manual-admin.html";
+    } else if (role === "corretor") {
+      linkManual.href = "manual-corretor.html";
+    } else {
+      linkManual.classList.add("oculto"); // esconde se não for admin nem corretor
+    }
   }
+
 
   async function carregarCorretores() {
     const { data, error } = await supabaseClient.from("corretores").select("id, nome").order("nome");
