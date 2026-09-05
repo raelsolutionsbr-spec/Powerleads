@@ -18,7 +18,12 @@
     --sucesso: #4caf50;
   }
   * { box-sizing: border-box; margin:0; padding:0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; background:var(--preto-fundo); color:var(--branco); }
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif; background:var(--preto-fundo); color:var(--branco);
+    display: flex; flex-direction: column; min-height: 100vh;
+  }
+  .container { flex: 1; }
 
   header.topbar {
     display:flex; justify-content:space-between; align-items:center;
@@ -56,7 +61,7 @@
   .btn-disparo { background:var(--sucesso); color:#fff; }
   button:disabled { opacity:.6; cursor:not-allowed; }
 
-  .container { padding:24px; max-width:1500px; margin:0 auto; }
+  .container { padding:24px; max-width:1500px; margin:0 auto; width: 100%; }
 
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:24px; }
   .card { background:var(--preto-card); border-radius:10px; padding:16px; border-left:4px solid var(--dourado); }
@@ -118,6 +123,11 @@
   }
 
   .oculto { display:none !important; }
+
+  footer {
+    text-align: center; padding: 16px 8px; font-size: 12px; color: #666;
+    border-top: 1px solid var(--borda); margin-top: 24px;
+  }
 </style>
 </head>
 <body>
@@ -271,6 +281,11 @@
 
 <div class="toast" id="toast"></div>
 
+<footer style="text-align: center; padding: 16px 8px; font-size: 12px; color: #666; border-top: 1px solid #333; margin-top: 24px;">
+  Sistema desenvolvido por
+  <span style="color: #1e40af; font-weight: 600;">RaelSolutions - Desenvolvimento de Software</span>
+</footer>
+
 <script>
   const SUPABASE_URL = "https://uifwnzgkxsacxpfnqbak.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpZnduemdreHNhY3hwZm5xYmFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NjA4MzksImV4cCI6MjEwNDAzNjgzOX0.zMmM8cAjDQd9STev26mCGFXCoUdCWOArjAQus6dGZtU";
@@ -299,11 +314,10 @@
     setTimeout(() => t.style.display = "none", 3000);
   }
 
-  async function sair() {
-  await supabaseClient.auth.signOut();
-  window.location.replace("index.html");
-}
-
+  function sair() {
+    supabaseClient.auth.signOut();
+    window.location.href = "index.html";
+  }
 
   async function verificarSessao() {
     const { data } = await supabaseClient.auth.getSession();
@@ -342,7 +356,6 @@
   function aplicarRestricoesPorPerfil(role) {
     const ehCorretor = role === "corretor";
 
-    // Corretor não vê coluna Corretor, filtro de corretor, nem dispara leads
     document.getElementById("thCorretor").classList.toggle("oculto", ehCorretor);
     document.getElementById("filtroCorretor").classList.toggle("oculto", ehCorretor);
     document.getElementById("btnDisparo").classList.toggle("oculto", ehCorretor);
@@ -680,9 +693,6 @@
 
   init();
 </script>
-<footer style="text-align: center; padding: 8px; font-size: 12px; color: #666;">
-  Sistema desenvolvido por 
-  <span style="color: #1e40af; font-weight: 600;">RaelSolutions - Desenvolvimento de Software</span>
-</footer>
+
 </body>
 </html>
